@@ -1,0 +1,32 @@
+{
+  "name": "committeekeeper",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Keeps a kameti (rotating savings committee) honest: who paid, whose turn it is, and a history nobody can quietly change",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "next build && playwright test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "^16.4.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.6.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.4",
+    "vitest": "^5.0.5"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
