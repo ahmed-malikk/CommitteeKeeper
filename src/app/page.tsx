@@ -1,12 +1,19 @@
+import { PageTransition } from "@/components/PageTransition";
+import { PopText } from "@/components/PopText";
+import { PublicShell } from "@/components/PublicShell";
 import { site } from "@/lib/site";
 
-// Placeholder home page. The real design (tokens, fonts, app shell) arrives with issue #3.
+// Placeholder landing. The real landing page comes with the sign-up work (issue #4).
 export default function Home() {
   return (
-    <main style={{ maxWidth: 560, margin: "0 auto", padding: "64px 16px" }}>
-      <h1>{site.name}</h1>
-      <p>{site.tagline}</p>
-      <p>{site.description}</p>
-    </main>
+    <PublicShell>
+      <PageTransition>
+        <div className="prose" style={{ paddingTop: 40 }}>
+          <PopText text={site.name} />
+          <p className="rise" style={{ ["--i" as string]: 3 }}>{site.tagline}</p>
+          <p className="mut rise" style={{ ["--i" as string]: 4 }}>{site.description}</p>
+        </div>
+      </PageTransition>
+    </PublicShell>
   );
 }

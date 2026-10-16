@@ -1,0 +1,192 @@
+/* CommitteeKeeper: Banknote Iris. Tokens, base, shell and state styles, ported from the approved prototype. */
+:root {
+  --font: var(--font-red-hat-display), system-ui, sans-serif;
+  --num: var(--font-red-hat-mono), ui-monospace, monospace;
+  --ground: #EBF2F0; --paper: #FFFFFF; --ink: #14343B; --ink2: #3F5A60; --line: #C5D6D3; --line2: #DCE8E5; --wash: #F3F8F7;
+  /* Livelier iris palette (chosen by Ahmed, 15 Oct) */
+  --teal: #14A6A0; --tealink: #0C6B66; --peri: #6A4FE0; --rose: #E0508A; --late: #A8325A; --latebg: #F8E3EA; --paidbg: #D8EFEC;
+  --iris: linear-gradient(90deg, #14A6A0, #6A4FE0 45%, #E0508A 75%, #F0A24C);
+  --lit1: #DDF3F1; --lit2: #EBE4FB;
+  --rail: #14343B; --railtx: #DCE8E6; --railtx2: #A6CFCD;
+  --r: 10px; --ease: cubic-bezier(.16, 1, .3, 1);
+  /* Motion: how far things travel. Reduced motion sets this to 0, so movement becomes a plain fade. */
+  --shift: 16px; --ease-in: cubic-bezier(.4, 0, 1, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; scrollbar-width: thin; scrollbar-color: #8FB9B6 transparent; }
+html { -webkit-text-size-adjust: 100%; }
+body { background: var(--ground); color: var(--ink); font: 400 16px/1.5 var(--font); min-height: 100vh; caret-color: var(--peri); }
+::selection { background: #C9CBF4; color: var(--ink); }
+a { color: var(--tealink); text-underline-offset: 3px; }
+:focus-visible { outline: 2px solid var(--peri); outline-offset: 2px; border-radius: 4px; animation: ring .25s var(--ease); }
+@keyframes ring { from { outline-offset: 7px; outline-color: transparent; } }
+
+.num, .slotno { font-family: var(--num); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.n { font-variant-numeric: tabular-nums; }
+h1 { font-size: 1.75rem; line-height: 1.15; font-weight: 700; letter-spacing: -.015em; text-wrap: balance; }
+h2 { font-size: 1.1rem; line-height: 1.25; font-weight: 700; margin-bottom: 10px; }
+h3 { font-size: 1rem; font-weight: 600; }
+.sm { font-size: .875rem; }
+.mut { color: var(--ink2); }
+.sr { position: absolute; left: -9999px; }
+
+/* The iris band: the one lit stroke across the top of every page */
+.iris { height: 6px; background: var(--iris); background-size: 200% 100%; animation: iris-draw 1s var(--ease) both, drift 40s linear 1s infinite alternate; }
+@keyframes iris-draw { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes drift { to { background-position: 100% 0; } }
+
+/* Buttons */
+.btn { font: 600 .95rem/1 var(--font); border: 1px solid transparent; border-radius: 99px; padding: 12px 20px; min-height: 44px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; transition: background .15s, border-color .15s, transform .2s var(--ease), box-shadow .2s var(--ease); }
+.btn.primary { background: var(--ink); color: #fff; }
+.btn.primary:hover { background: #0C2429; }
+.btn.secondary { background: #fff; border-color: var(--line); color: var(--ink); }
+.btn.secondary:hover { border-color: var(--ink2); }
+.btn.ghost { background: transparent; color: var(--tealink); padding-inline: 12px; }
+.btn.ghost:hover { background: var(--line2); }
+.btn.small { min-height: 36px; padding: 8px 14px; font-size: .875rem; }
+.btn:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(20, 52, 59, .16); }
+.btn.ghost:hover, .btn.secondary:hover { box-shadow: none; }
+.btn:active { transform: translateY(1px) scale(.985); box-shadow: none; }
+.btn .ic { transition: transform .25s var(--ease); }
+.btn:hover .ic { transform: translateX(2px); }
+.btn[disabled] { opacity: .55; cursor: not-allowed; }
+.ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* Status chips */
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: .8125rem; font-weight: 600; padding: 2px 10px; border-radius: 99px; background: var(--line2); color: var(--ink); }
+.chip.paid { background: var(--paidbg); color: var(--tealink); }
+.chip.late { background: var(--latebg); color: var(--late); }
+.chip.run { background: #D8EFEC; color: var(--tealink); }
+.chip.form { background: #E3E4F7; color: #3F42A0; }
+.chip.done { background: var(--line2); color: var(--ink2); }
+
+/* App shell: deep-teal rail on laptop, top bar and tab bar on phone */
+.shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+.rail { background: var(--rail); color: var(--railtx); padding: 24px 16px; position: sticky; top: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; gap: 2px; }
+.rail::after { content: ""; position: absolute; left: -70px; right: -70px; bottom: -110px; height: 300px; background: repeating-radial-gradient(circle at 50% 100%, transparent 0 9px, rgba(111, 200, 196, .2) 9px 10px); pointer-events: none; transform-origin: 50% 100%; animation: arcs 9s ease-in-out infinite alternate; }
+@keyframes arcs { from { transform: scale(1); opacity: .7; } to { transform: scale(1.08); opacity: 1; } }
+.logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; color: #fff; text-decoration: none; margin-bottom: 18px; padding: 0 6px; }
+.logo i { width: 24px; height: 24px; border-radius: 50%; background: conic-gradient(#14A6A0, #6A4FE0, #E0508A, #14A6A0); display: inline-block; }
+.rail .grp { font-size: .8125rem; color: var(--railtx2); margin: 16px 8px 4px; font-weight: 600; }
+.rail a.nav { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 8px; color: var(--railtx); text-decoration: none; font-weight: 500; position: relative; z-index: 1; transition: background .2s, color .2s; }
+.rail a.nav:hover { background: rgba(255, 255, 255, .08); }
+.rail a.nav:hover .ic { transform: translateX(3px); }
+.rail a.nav .ic { transition: transform .3s var(--ease); }
+.rail a.nav.on { color: #fff; }
+.rail:not([data-pill]) a.nav.on { background: rgba(255, 255, 255, .14); }
+/* One highlight that slides to the active link (measured in AppShell) */
+.rail .pill { position: absolute; left: 16px; right: 16px; top: 0; border-radius: 8px; background: rgba(255, 255, 255, .14); opacity: 0; pointer-events: none; z-index: 0; animation: fade-only .5s var(--ease) .35s both; }
+.rail[data-slide] .pill { transition: transform .45s var(--ease), height .3s var(--ease); }
+.rail > .logo, .rail > a.nav, .rail > .grp { animation: slide-in .6s var(--ease) both; animation-delay: calc(var(--i, 0) * 60ms + 150ms); }
+.rail > :nth-child(2) { --i: 0; } .rail > :nth-child(3) { --i: 1; } .rail > :nth-child(4) { --i: 2; } .rail > :nth-child(5) { --i: 3; } .rail > :nth-child(6) { --i: 4; }
+.rail .who { margin-top: auto; padding: 10px; font-size: .875rem; color: var(--railtx2); position: relative; z-index: 1; }
+.main { min-width: 0; }
+.page { max-width: 1120px; padding: 28px 40px 60px; margin: 0 auto; position: relative; overflow-x: clip; }
+.wash { position: absolute; right: -80px; top: -60px; width: 480px; height: 480px; border-radius: 50%; background: radial-gradient(circle, rgba(106, 79, 224, .16), rgba(20, 166, 160, .08) 45%, transparent 70%); pointer-events: none; }
+.head { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; position: relative; margin-bottom: 18px; }
+.head .meta { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; margin-top: 6px; color: var(--ink2); }
+.topbar, .tabbar { display: none; }
+.stack > * + * { margin-top: 20px; }
+
+/* Public pages (landing, privacy, how it's built) */
+.pub { max-width: 1120px; margin: 0 auto; padding: 0 40px; }
+.pubhead { display: flex; justify-content: space-between; align-items: center; padding: 18px 0; }
+.pubhead .logo { color: var(--ink); margin: 0; }
+.foot { border-top: 1px solid var(--line); margin-top: 60px; padding: 22px 0; display: flex; gap: 20px; flex-wrap: wrap; color: var(--ink2); font-size: .9rem; }
+.prose { max-width: 68ch; }
+.prose p { margin-bottom: 12px; }
+.prose h2 { margin-top: 26px; }
+
+/* Notes, empty and loading states */
+.note { display: flex; gap: 10px; align-items: flex-start; background: var(--wash); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; font-size: .9375rem; color: var(--ink); }
+.note.warn { background: var(--latebg); border-color: #EBC3D0; color: #6E1D3A; }
+.note.ok { background: var(--paidbg); border-color: #A9D8D3; }
+.skel { background: linear-gradient(90deg, var(--line2), #F4F9F8, var(--line2)); background-size: 200% 100%; animation: sh 1.4s linear infinite; border-radius: 8px; height: 18px; }
+@keyframes sh { to { background-position: -200% 0; } }
+.empty { text-align: center; padding: 48px 20px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); }
+.empty svg.big { width: 120px; height: 120px; margin-bottom: 10px; }
+.empty p { max-width: 44ch; margin: 0 auto 18px; }
+
+/* Phone: single column, top bar, bottom tab bar */
+@media (max-width: 900px) {
+  .shell { display: block; }
+  .rail { display: none; }
+  .page { padding: 16px 16px 150px; }
+  .wash { display: none; }
+  h1 { font-size: 1.5rem; }
+  .topbar { display: flex; align-items: center; gap: 10px; padding: 4px 16px; background: var(--rail); color: #fff; position: sticky; top: 0; z-index: 20; }
+  .topbar a { color: #fff; text-decoration: none; display: flex; align-items: center; gap: 8px; font-weight: 600; min-width: 0; }
+  .topbar > a:first-child { flex: 1; min-height: 44px; }
+  .topbar .ttl { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .topbar a.how { flex: none; min-height: 44px; min-width: 44px; justify-content: center; border-radius: 99px; }
+  .tabbar { display: grid; grid-template-columns: repeat(4, 1fr); position: fixed; left: 0; right: 0; bottom: 0; background: #fff; border-top: 1px solid var(--line); z-index: 25; padding-bottom: env(safe-area-inset-bottom); }
+  .tabbar a { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 9px 4px 8px; font-size: .75rem; font-weight: 600; color: var(--ink2); text-decoration: none; min-height: 56px; }
+  .tabbar a.on { color: var(--ink); }
+  .tabbar a.on .ic { stroke: var(--tealink); }
+  .head { flex-direction: column; gap: 12px; }
+  .pub { padding: 0 16px; }
+}
+
+/* ---- Motion ---------------------------------------------------------------------------------------------
+   Everything below is pure CSS, so nothing is hidden if scripts fail. Reduced motion keeps the fades and the
+   state changes and drops the travelling (see the media query at the end). */
+@keyframes rise { from { opacity: 0; translate: 0 var(--shift); } }
+@keyframes slide-in { from { opacity: 0; translate: calc(var(--shift) * -.75) 0; } }
+@keyframes pop { from { opacity: 0; translate: 0 .55em; filter: blur(6px); } }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes turn { to { rotate: 360deg; } }
+@keyframes fade-only { from { opacity: 0; } }
+@keyframes drop { from { opacity: 0; translate: 0 -100%; } }
+
+.rise { animation: rise .7s var(--ease) both; animation-delay: calc(var(--i, 0) * 90ms + 120ms); }
+.pw { display: inline-block; animation: pop .8s var(--ease) both; animation-delay: calc(var(--i, 0) * 70ms + 200ms); }
+/* A list that appears as a list: each child follows the one before, capped so a long list is not slow */
+.stagger > * { animation: rise .55s var(--ease) both; animation-delay: calc(min(var(--i, 0), 8) * 55ms + 120ms); }
+/* Content that rises when it scrolls into view (Reveal) */
+.reveal.armed { opacity: 0; translate: 0 var(--shift); transition: opacity .7s var(--ease), translate .7s var(--ease); }
+.reveal.armed.shown { opacity: 1; translate: 0 0; }
+.topbar { animation: drop .5s var(--ease) both; }
+
+/* The empty-state rosette draws each ring, then turns slowly */
+.empty svg.big ellipse, .empty svg.big circle { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 1.4s var(--ease) forwards; animation-delay: calc(var(--d, 0ms) + 250ms); }
+.empty svg.big .spin { transform-origin: 0 0; animation: turn 80s linear infinite; }
+
+/* Phone tab bar: one marker slides to the active tab */
+.tabmark { position: absolute; top: 0; left: 0; height: 3px; width: calc(100% / var(--tabs, 4)); background: var(--iris); border-radius: 0 0 3px 3px; transform: translateX(calc(var(--tab, 0) * 100%)); transition: transform .45s var(--ease); }
+.tabmark[data-none] { opacity: 0; }
+.tabbar a .ic { transition: transform .3s var(--ease); }
+.tabbar a.on .ic { transform: translateY(-2px); }
+
+/* Moving between pages: the old content leaves quickly, the new content arrives a little after.
+   The rail, bars and iris band hold still so only the content is seen to move. */
+::view-transition { pointer-events: none; }
+::view-transition-group(ck-rail), ::view-transition-group(ck-topbar), ::view-transition-group(ck-tabbar), ::view-transition-group(ck-iris), ::view-transition-group(ck-pubhead) { animation: none; z-index: 100; }
+::view-transition-old(ck-rail), ::view-transition-old(ck-topbar), ::view-transition-old(ck-tabbar), ::view-transition-old(ck-iris), ::view-transition-old(ck-pubhead) { display: none; }
+::view-transition-new(ck-rail), ::view-transition-new(ck-topbar), ::view-transition-new(ck-tabbar), ::view-transition-new(ck-iris), ::view-transition-new(ck-pubhead) { animation: none; }
+::view-transition-old(.page-out) { animation: 150ms var(--ease-in) both vt-fade reverse, 150ms var(--ease-in) both vt-rise reverse; }
+::view-transition-new(.page-in) { animation: 280ms var(--ease) 130ms both vt-fade, 480ms var(--ease) 130ms both vt-rise; }
+@keyframes vt-fade { from { opacity: 0; filter: blur(4px); } }
+@keyframes vt-rise { from { translate: 0 var(--shift); } }
+
+@media (prefers-reduced-motion: reduce) {
+  /* Reduced, not removed: no travelling, no looping, no blur; fades and state changes stay */
+  :root { --shift: 0px; }
+  .iris { animation: fade-only .4s both; }
+  .rail::after, .empty svg.big .spin, .skel { animation: none; }
+  .pw { animation: fade-only .35s both; }
+  .empty svg.big ellipse, .empty svg.big circle { animation: none; stroke-dashoffset: 0; }
+  .topbar { animation: fade-only .35s both; }
+  .btn:hover, .btn:active { transform: none; }
+  .rail a.nav:hover .ic, .btn:hover .ic, .tabbar a.on .ic { transform: none; }
+  ::view-transition-old(.page-out) { animation: 120ms linear both vt-fade reverse; }
+  ::view-transition-new(.page-in) { animation: 220ms linear both vt-fade; }
+}
+@media print {
+  .rail, .topbar, .tabbar, .btn, .wash { display: none !important; }
+  .shell { display: block; }
+  body { background: #fff; }
+  .page { padding: 0; max-width: none; }
+  .iris { display: block; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .chip { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
