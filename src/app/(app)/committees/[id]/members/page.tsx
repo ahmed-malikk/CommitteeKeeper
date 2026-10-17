@@ -45,6 +45,7 @@ export default async function MembersPage({ params, searchParams }: { params: Pr
   const room = c.periods - slotCount;
   const complete = slotCount === c.periods;
   const running = c.status === "running";
+  const locked = c.status === "completed";
   const turns = running ? await getTurns(id, c.periods) : null;
   const replaceSlots = (turns ?? []).filter((t) => t.holders.length > 0).map((t) => ({ id: t.id, label: t.label, holders: t.holders }));
   const replaceMembers = (members.data ?? []).map((m) => ({ id: m.id, name: m.name }));
@@ -98,6 +99,7 @@ export default async function MembersPage({ params, searchParams }: { params: Pr
                       canChangeSlots={forming}
                       canRemove={forming}
                       roomLeft={room > 0}
+                      readOnly={locked}
                     />
                   );
                 })}
@@ -107,6 +109,7 @@ export default async function MembersPage({ params, searchParams }: { params: Pr
             )}
           </section>
 
+          {locked ? null : (
           <section>
             <h2>{members.data && members.data.length > 0 ? "Add another member" : "Add the first member"}</h2>
             <AddMemberForm committeeId={id} withSlots={forming} room={room} />
@@ -126,6 +129,7 @@ export default async function MembersPage({ params, searchParams }: { params: Pr
               </div>
             ) : null}
           </section>
+          )}
         </div>
       )}
     </PageTransition>

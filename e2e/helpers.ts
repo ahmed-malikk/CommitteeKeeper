@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { createClient } from "@supabase/supabase-js";
 
 // One saved sign-in (made by auth.setup.ts) is reused by every test that needs a signed-in organiser,
 // so the suite does not sign in dozens of times (Supabase limits sign-ins per minute).
@@ -80,4 +81,37 @@ export async function runningByHand(page: Page, names: string[]) {
   await expect(page.getByText("Order saved.")).toBeVisible();
   await startCommitteeOnPage(page, url);
   return { url, order: [names[1], names[0], ...names.slice(2)] };
+}
+
+/** The organiser's own database session, signed in like the app does it (publishable key only; no secret key). */
+export async function organiserDb() {
+  const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "", process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "", { auth: { persistSession: false } });
+  const { error } = await db.auth.signInWithPassword({ email: login.email, password: login.password });
+  if (error) throw new Error(`Could not sign in for the database: ${error.message}`);
+  return db;
+}
+
+/** Today in Pakistan (UTC+5), as the database counts it. */
+const pakistanToday = () => new Date(Date.now() + 5 * 3_600_000).toISOString().slice(0, 10);
+
+/**
+ * Records the payout of every turn straight in the database, as the organiser. The payout screen is a later feature;
+ * this lets the test reach "every turn paid out" so completing a committee can be tried now.
+ */
+export async function payOutAllTurns(committeeUrl: string) {
+  const committeeId = committeeUrl.split("/").pop() as string;
+  const db = await organiserDb();
+  const committee = await db.from("committees").select("amount, periods").eq("id", committeeId).single();
+  if (committee.error) throw new Error(committee.error.message);
+  const slots = await db.from("slots").select("id").eq("committee_id", committeeId);
+  for (const slot of slots.data ?? []) {
+    const holder = await db.from("slot_holders").select("member_id").eq("slot_id", slot.id).single();
+    const paid = await db.rpc("record_payout", {
+      p_committee_id: committeeId,
+      p_slot_id: slot.id,
+      p_paid_on: pakistanToday(),
+      p_split: [{ member_id: holder.data?.member_id, amount: committee.data.amount * committee.data.periods }],
+    });
+    if (paid.error) throw new Error(`record_payout failed: ${paid.error.message}`);
+  }
 }

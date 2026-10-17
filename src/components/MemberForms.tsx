@@ -91,10 +91,12 @@ type RowProps = {
   canChangeSlots: boolean;
   canRemove: boolean;
   roomLeft: boolean;
+  /** A completed committee: the member can be read but not edited. */
+  readOnly?: boolean;
 };
 
 /** One member: their slots, contact details (organiser only), and the things the organiser can do. */
-export function MemberRow({ committeeId, member, slots, earlier, duesText, canChangeSlots, canRemove, roomLeft }: RowProps) {
+export function MemberRow({ committeeId, member, slots, earlier, duesText, canChangeSlots, canRemove, roomLeft, readOnly }: RowProps) {
   const [editState, edit, editing] = useActionState(editMember, initial);
   const [slotState, plus, plusPending] = useActionState(addSlot, initial);
   const [minusState, minus, minusPending] = useActionState(removeSlot, initial);
@@ -155,6 +157,7 @@ export function MemberRow({ committeeId, member, slots, earlier, duesText, canCh
         </div>
       ) : null}
 
+      {readOnly ? null : (
       <details className="edit" ref={details}>
         <summary className="btn ghost small">Edit details</summary>
         <form action={edit} noValidate aria-label={`Edit ${member.name}`}>
@@ -185,6 +188,7 @@ export function MemberRow({ committeeId, member, slots, earlier, duesText, canCh
           </form>
         ) : null}
       </details>
+      )}
     </li>
   );
 }

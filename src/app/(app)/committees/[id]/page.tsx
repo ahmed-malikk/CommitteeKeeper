@@ -9,8 +9,8 @@ import { ORDER_LABELS, type OrderMethod } from "@/lib/agreement";
 import { formatDate, ordinal, todayInPakistan } from "@/lib/dates";
 import { formatRupees } from "@/lib/money";
 import { StatusPanel } from "@/components/StatusPanel";
-import { startProblems, lastDueDate } from "@/lib/committee";
-import { getCommittee, getSlotInfo } from "@/lib/dal";
+import { completeProblems, lastDueDate, startProblems } from "@/lib/committee";
+import { getCommittee, getCompletionFacts, getSlotInfo } from "@/lib/dal";
 
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -42,6 +42,18 @@ export default async function CommitteePage({
     slots,
   });
   const lastDue = formatDate(lastDueDate(c.start_date, c.periods, c.due_day));
+
+  // A running committee shows what is in the way of completing it (with and without a settlement note, so the form can react as it is typed).
+  const facts = c.status === "running" ? await getCompletionFacts(id, c.periods) : null;
+  const info = { status: c.status, amount: c.amount, periods: c.periods, startDate: c.start_date, dueDay: c.due_day, orderMethod: c.order_method, slots: facts?.slots ?? slots };
+  const today = todayInPakistan();
+  const completion = facts
+    ? {
+        unrecorded: facts.unrecorded,
+        problems: completeProblems(info, today, facts.unrecorded, null),
+        problemsWithNote: completeProblems(info, today, facts.unrecorded, "note"),
+      }
+    : undefined;
 
   const money = (n: number) => formatRupees(n, { style: c.display_style, grouping: c.display_grouping });
   const yes = (b: boolean) => (b ? "Yes" : "No");
@@ -78,6 +90,7 @@ export default async function CommitteePage({
           startedInThePast={c.start_date < todayInPakistan()}
           startText={formatDate(c.start_date)}
           lastDueText={lastDue}
+          completion={completion}
         />
         <section className="agreement">
           <h2>Agreement</h2>

@@ -116,3 +116,18 @@ export const getSwapHistory = cache(async (committeeId: string): Promise<SwapEve
   if (error) return null;
   return (data ?? []).map((e) => ({ seq: e.seq, happenedOn: e.happened_on, payload: (e.payload ?? {}) as SwapEvent["payload"] }));
 });
+
+/** How many instalments have a payment recorded that counts (a corrected or cancelled one is not counted). Null when the database could not be reached. */
+export const getRecordedPaymentCount = cache(async (committeeId: string): Promise<number | null> => {
+  const supabase = await createClient();
+  const { count, error } = await supabase.from("payments_current").select("id", { count: "exact", head: true }).eq("committee_id", committeeId);
+  return error ? null : (count ?? 0);
+});
+
+/** The committee's slots plus how many payments are still unrecorded, in the shape `completeProblems` expects. */
+export async function getCompletionFacts(committeeId: string, periods: number) {
+  const [slots, recorded] = await Promise.all([getSlotInfo(committeeId), getRecordedPaymentCount(committeeId)]);
+  if (!slots || recorded === null) return null;
+  // Every slot pays every period, so periods x periods instalments are expected in all (same rule as the database).
+  return { slots, unrecorded: Math.max(0, periods * periods - recorded) };
+}

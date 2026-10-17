@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { startCommittee, type StartState } from "@/app/(app)/committees/[id]/start-action";
+import { CompletePanel } from "./CompletePanel";
 import { Icon } from "./Icon";
 import { ErrorNote } from "./states";
 
@@ -22,10 +23,12 @@ type Props = {
   startedInThePast: boolean;
   startText: string;
   lastDueText: string;
+  /** Only for a running committee: what is in the way of completing it. */
+  completion?: { unrecorded: number; problems: string[]; problemsWithNote: string[] };
 };
 
 /** Where the committee is in its life, and the one button that moves it from forming to running. */
-export function StatusPanel({ committeeId, status, problems, startedInThePast, startText, lastDueText }: Props) {
+export function StatusPanel({ committeeId, status, problems, startedInThePast, startText, lastDueText, completion }: Props) {
   const [state, action, pending] = useActionState(startCommittee, initial);
   const [asking, setAsking] = useState(false);
   const shown = state.problems.length > 0 ? state.problems : problems;
@@ -98,6 +101,9 @@ export function StatusPanel({ committeeId, status, problems, startedInThePast, s
             </>
           )}
 
+          <p className="sm mut" style={{ marginTop: 12 }}>
+            A committee can only be completed after it has started.
+          </p>
           {!asking ? (
             blocked ? (
               <button className="btn secondary" type="submit" disabled aria-describedby="why" style={{ marginTop: 12 }}>
@@ -110,6 +116,14 @@ export function StatusPanel({ committeeId, status, problems, startedInThePast, s
             )
           ) : null}
         </form>
+      ) : status === "running" && completion ? (
+        <CompletePanel
+          committeeId={committeeId}
+          unrecorded={completion.unrecorded}
+          problems={completion.problems}
+          problemsWithNote={completion.problemsWithNote}
+          lastDueText={lastDueText}
+        />
       ) : status === "running" ? (
         <p className="mut">
           This committee is running. The amount, number of periods and start date are fixed. The last payment is due <b>{lastDueText}</b>.

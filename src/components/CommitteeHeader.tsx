@@ -55,6 +55,12 @@ export function CommitteeHeader({ committee: c, active, children }: { committee:
           Turns
         </Link>
       </nav>
+      {status === "completed" ? (
+        <p className="note readonly" role="status" style={{ marginBottom: 16 }}>
+          <Icon name="lock" />
+          <span>This committee is completed. Its record is read-only: nothing in it can be changed.</span>
+        </p>
+      ) : null}
     </>
   );
 }

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   canMove,
+  completeProblems,
+  isAllowed,
   lastDueDate,
   startProblems,
   type CommitteeInfo,
@@ -138,5 +140,116 @@ describe("Task 3 lastDueDate", () => {
 
   it("handles the last day a due day can be (28th) in February", () => {
     expect(lastDueDate("2027-01-15", 2, 28)).toBe("2027-02-28");
+  });
+});
+
+describe("Task 4 completeProblems", () => {
+  const finished = committee({
+    status: "running",
+    slots: [slot(1, { paidOut: true }), slot(2, { paidOut: true }), slot(3, { paidOut: true })],
+  });
+
+  it("returns an empty list when the last period has passed and every turn is paid out", () => {
+    expect(completeProblems(finished, "2026-03-05", 0, null)).toEqual([]);
+  });
+
+  it("refuses a committee that has not started (TC-017)", () => {
+    expect(completeProblems(committee(), "2030-01-01", 0, null)).toEqual([
+      "A committee cannot be completed before it has started",
+    ]);
+  });
+
+  it("refuses a committee that is already completed", () => {
+    expect(completeProblems({ ...finished, status: "completed" }, "2030-01-01", 0, null)).toEqual([
+      "This committee is already completed",
+    ]);
+  });
+
+  it("refuses before the last period is over", () => {
+    expect(completeProblems(finished, "2026-03-04", 0, null)).toEqual([
+      "The last period is not over yet (last due day 2026-03-05)",
+    ]);
+  });
+
+  it("counts the turns that are not paid out yet", () => {
+    const slots = [slot(1, { paidOut: true }), slot(2), slot(3)];
+    expect(completeProblems({ ...finished, slots }, "2026-03-05", 0, null)).toEqual([
+      "2 turn(s) have not been paid out",
+    ]);
+  });
+
+  it("needs a settlement note when payments are not recorded", () => {
+    expect(completeProblems(finished, "2026-03-05", 8, null)).toEqual([
+      "8 payment(s) are not recorded; record them, or say how they were settled",
+    ]);
+  });
+
+  it("treats a blank note as no note", () => {
+    expect(completeProblems(finished, "2026-03-05", 8, "   ")).toHaveLength(1);
+  });
+
+  it("accepts unrecorded payments when a settlement note is given", () => {
+    expect(completeProblems(finished, "2026-03-05", 8, "settled in cash")).toEqual([]);
+  });
+
+  it("lists every problem together", () => {
+    const slots = [slot(1), slot(2, { paidOut: true }), slot(3)];
+    expect(completeProblems({ ...finished, slots }, "2026-02-01", 4, null)).toEqual([
+      "The last period is not over yet (last due day 2026-03-05)",
+      "2 turn(s) have not been paid out",
+      "4 payment(s) are not recorded; record them, or say how they were settled",
+    ]);
+  });
+});
+
+describe("Task 5 isAllowed", () => {
+  it("lets a forming committee change its agreement and its slots", () => {
+    for (const action of ["update_settings", "add_slot", "remove_slot", "remove_member", "start"] as const) {
+      expect(isAllowed("forming", action), action).toBe(true);
+    }
+  });
+
+  it("fixes the agreement once the committee is running", () => {
+    for (const action of ["update_settings", "add_slot", "remove_slot", "remove_member", "start"] as const) {
+      expect(isAllowed("running", action), action).toBe(false);
+    }
+  });
+
+  it("allows money records only while running", () => {
+    const money = ["record_payment", "correct_payment", "attach_receipt", "remove_receipt", "record_payout"] as const;
+    for (const action of money) {
+      expect(isAllowed("running", action), action).toBe(true);
+      expect(isAllowed("forming", action), action).toBe(false);
+    }
+  });
+
+  it("allows swaps, replacements, the monthly draw and completing only while running", () => {
+    for (const action of ["swap_turns", "replace_holder", "draw_next", "complete"] as const) {
+      expect(isAllowed("running", action), action).toBe(true);
+      expect(isAllowed("forming", action), action).toBe(false);
+    }
+  });
+
+  it("allows members, order, visibility and the start draw while forming or running", () => {
+    const both = [
+      "add_member", "update_member", "set_visibility", "set_order", "set_order_method",
+      "record_agreement", "set_member_link", "draw_all",
+    ] as const;
+    for (const action of both) {
+      expect(isAllowed("forming", action), action).toBe(true);
+      expect(isAllowed("running", action), action).toBe(true);
+    }
+  });
+
+  it("allows nothing once completed (TC-020: read-only)", () => {
+    const all = [
+      "update_settings", "add_slot", "remove_slot", "remove_member", "start", "add_member", "update_member",
+      "set_visibility", "set_order", "set_order_method", "record_agreement", "set_member_link", "draw_all",
+      "record_payment", "correct_payment", "attach_receipt", "remove_receipt", "record_payout",
+      "swap_turns", "replace_holder", "draw_next", "complete",
+    ] as const;
+    for (const action of all) {
+      expect(isAllowed("completed", action), action).toBe(false);
+    }
   });
 });
