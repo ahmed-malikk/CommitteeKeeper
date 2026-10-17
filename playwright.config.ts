@@ -1,5 +1,12 @@
 import { defineConfig } from "@playwright/test";
 
+// The auth tests sign in with the test accounts from .env.local (git-ignored). Without it they skip.
+try {
+  process.loadEnvFile(".env.local");
+} catch {
+  /* no .env.local: fine on CI */
+}
+
 /**
  * System tests drive the production build in a real browser, on desktop and on
  * a 375 px phone screen from day one. `npm run test:e2e` builds first.
@@ -30,8 +37,10 @@ export default defineConfig({
         timeout: 60_000,
       },
   projects: [
-    { name: "desktop-edge", use: { channel: "msedge", viewport: { width: 1280, height: 860 } } },
-    { name: "desktop-chrome", use: { channel: "chrome", viewport: { width: 1280, height: 860 } } },
-    { name: "phone-375", use: { channel: "msedge", viewport: { width: 375, height: 812 }, hasTouch: true } },
+    // Signs in once and saves the session; every browser project below waits for it.
+    { name: "setup", testMatch: /auth\.setup\.ts/, use: { channel: "msedge" } },
+    { name: "desktop-edge", testIgnore: /auth\.setup\.ts/, dependencies: ["setup"], use: { channel: "msedge", viewport: { width: 1280, height: 860 } } },
+    { name: "desktop-chrome", testIgnore: /auth\.setup\.ts/, dependencies: ["setup"], use: { channel: "chrome", viewport: { width: 1280, height: 860 } } },
+    { name: "phone-375", testIgnore: /auth\.setup\.ts/, dependencies: ["setup"], use: { channel: "msedge", viewport: { width: 375, height: 812 }, hasTouch: true } },
   ],
 });

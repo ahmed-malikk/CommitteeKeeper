@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLayoutEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { signOut } from "@/app/(auth)/actions";
 import { Icon, type IconName } from "./Icon";
 
 export type Tab = { href: string; label: string; icon: IconName };
@@ -60,7 +61,7 @@ function RailNav({ children }: { children: ReactNode }) {
  * The rail, top bar, tab bar and iris band have fixed view-transition names, so they stay still while
  * the page content slides between routes.
  */
-export function AppShell({ children, title = "My committees", tabs }: { children: ReactNode; title?: string; tabs?: Tab[] }) {
+export function AppShell({ children, email, title = "My committees", tabs }: { children: ReactNode; email: string; title?: string; tabs?: Tab[] }) {
   const pathname = usePathname();
   const activeTab = tabs ? tabs.findIndex((tab) => pathname.startsWith(tab.href)) : -1;
   return (
@@ -79,6 +80,13 @@ export function AppShell({ children, title = "My committees", tabs }: { children
           <NavLink href="/how-its-built" icon="list">
             How it&rsquo;s built
           </NavLink>
+          <form action={signOut}>
+            <button className="nav" type="submit">
+              <Icon name="out" />
+              Sign out
+            </button>
+          </form>
+          <div className="who">{email}</div>
         </RailNav>
         <div className="main">
           <div className="topbar" style={{ viewTransitionName: "ck-topbar" }}>
@@ -91,6 +99,11 @@ export function AppShell({ children, title = "My committees", tabs }: { children
             <Link className="how" href="/how-its-built" aria-label="How it's built">
               <Icon name="list" />
             </Link>
+            <form action={signOut}>
+              <button className="how" type="submit" aria-label="Sign out">
+                <Icon name="out" />
+              </button>
+            </form>
           </div>
           <main className="page">
             <div className="wash" aria-hidden="true" />

@@ -1,4 +1,8 @@
 import { expect, test } from "@playwright/test";
+import { ORGANISER_STATE } from "./helpers";
+
+// These pages need a signed-in organiser: reuse the saved sign-in.
+test.use({ storageState: ORGANISER_STATE });
 
 const isPhone = () => test.info().project.name === "phone-375";
 

@@ -16,6 +16,9 @@ coverage/
 test-results/
 playwright-report/
 
+# saved test sign-ins
+playwright/.auth/
+
 # secrets: Supabase keys live here and must never be committed
 .env
 .env*.local

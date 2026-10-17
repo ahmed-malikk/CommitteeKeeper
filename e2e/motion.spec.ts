@@ -1,4 +1,7 @@
 import { expect, test } from "@playwright/test";
+import { ORGANISER_STATE } from "./helpers";
+
+test.use({ storageState: ORGANISER_STATE });
 
 const isPhone = () => test.info().project.name === "phone-375";
 
@@ -29,8 +32,8 @@ test.describe("motion", () => {
   test("the page is readable with scripts off (motion is CSS, nothing is hidden for good)", async ({ browser, baseURL }) => {
     const context = await browser.newContext({ javaScriptEnabled: false, baseURL });
     const page = await context.newPage();
-    await page.goto("/committees");
-    await expect(page.getByRole("heading", { name: "My committees" })).toBeVisible();
+    await page.goto("/");
+    await expect(page.getByRole("heading", { name: "CommitteeKeeper" })).toBeVisible();
     await expect.poll(() => page.locator(".pw").first().evaluate((el) => getComputedStyle(el).opacity), { timeout: 4000 }).toBe("1");
     await context.close();
   });

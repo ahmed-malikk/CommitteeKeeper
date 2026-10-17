@@ -69,18 +69,20 @@ h3 { font-size: 1rem; font-weight: 600; }
 .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; color: #fff; text-decoration: none; margin-bottom: 18px; padding: 0 6px; }
 .logo i { width: 24px; height: 24px; border-radius: 50%; background: conic-gradient(#14A6A0, #6A4FE0, #E0508A, #14A6A0); display: inline-block; }
 .rail .grp { font-size: .8125rem; color: var(--railtx2); margin: 16px 8px 4px; font-weight: 600; }
-.rail a.nav { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 8px; color: var(--railtx); text-decoration: none; font-weight: 500; position: relative; z-index: 1; transition: background .2s, color .2s; }
-.rail a.nav:hover { background: rgba(255, 255, 255, .08); }
-.rail a.nav:hover .ic { transform: translateX(3px); }
-.rail a.nav .ic { transition: transform .3s var(--ease); }
-.rail a.nav.on { color: #fff; }
+.rail .nav { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 8px; color: var(--railtx); text-decoration: none; font-weight: 500; position: relative; z-index: 1; transition: background .2s, color .2s; }
+.rail .nav:hover { background: rgba(255, 255, 255, .08); }
+.rail .nav:hover .ic { transform: translateX(3px); }
+.rail .nav .ic { transition: transform .3s var(--ease); }
+.rail .nav.on { color: #fff; }
 .rail:not([data-pill]) a.nav.on { background: rgba(255, 255, 255, .14); }
 /* One highlight that slides to the active link (measured in AppShell) */
 .rail .pill { position: absolute; left: 16px; right: 16px; top: 0; border-radius: 8px; background: rgba(255, 255, 255, .14); opacity: 0; pointer-events: none; z-index: 0; animation: fade-only .5s var(--ease) .35s both; }
 .rail[data-slide] .pill { transition: transform .45s var(--ease), height .3s var(--ease); }
-.rail > .logo, .rail > a.nav, .rail > .grp { animation: slide-in .6s var(--ease) both; animation-delay: calc(var(--i, 0) * 60ms + 150ms); }
+.rail > .logo, .rail > .nav, .rail > .grp { animation: slide-in .6s var(--ease) both; animation-delay: calc(var(--i, 0) * 60ms + 150ms); }
 .rail > :nth-child(2) { --i: 0; } .rail > :nth-child(3) { --i: 1; } .rail > :nth-child(4) { --i: 2; } .rail > :nth-child(5) { --i: 3; } .rail > :nth-child(6) { --i: 4; }
-.rail .who { margin-top: auto; padding: 10px; font-size: .875rem; color: var(--railtx2); position: relative; z-index: 1; }
+.rail .who { margin-top: auto; padding: 10px; font-size: .875rem; color: var(--railtx2); position: relative; z-index: 1; overflow-wrap: anywhere; }
+.rail button.nav { background: none; border: 0; width: 100%; font: inherit; font-weight: 500; cursor: pointer; text-align: left; }
+.rail form { display: contents; }
 .main { min-width: 0; }
 .page { max-width: 1120px; padding: 28px 40px 60px; margin: 0 auto; position: relative; overflow-x: clip; }
 .wash { position: absolute; right: -80px; top: -60px; width: 480px; height: 480px; border-radius: 50%; background: radial-gradient(circle, rgba(106, 79, 224, .16), rgba(20, 166, 160, .08) 45%, transparent 70%); pointer-events: none; }
@@ -97,6 +99,18 @@ h3 { font-size: 1rem; font-weight: 600; }
 .prose { max-width: 68ch; }
 .prose p { margin-bottom: 12px; }
 .prose h2 { margin-top: 26px; }
+
+/* Forms and the sign-in card */
+.authcard { max-width: 420px; margin: 40px auto; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 28px; }
+.authcard h1 { margin-bottom: 6px; }
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.field label { font-weight: 600; font-size: .9375rem; }
+.field .hint { font-size: .875rem; color: var(--ink2); }
+.field .hint.bad { color: var(--late); font-weight: 600; }
+.input { font: inherit; color: var(--ink); background: #fff; border: 1px solid #9DB5B2; border-radius: 8px; padding: 11px 12px; min-height: 44px; width: 100%; transition: border-color .2s, box-shadow .2s var(--ease); }
+.input:focus { outline: 2px solid var(--peri); outline-offset: 1px; border-color: var(--peri); }
+.input[aria-invalid="true"] { border-color: var(--late); box-shadow: 0 0 0 3px var(--latebg); }
+.input::placeholder { color: #6B8286; }
 
 /* Notes, empty and loading states */
 .note { display: flex; gap: 10px; align-items: flex-start; background: var(--wash); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; font-size: .9375rem; color: var(--ink); }
@@ -119,13 +133,15 @@ h3 { font-size: 1rem; font-weight: 600; }
   .topbar a { color: #fff; text-decoration: none; display: flex; align-items: center; gap: 8px; font-weight: 600; min-width: 0; }
   .topbar > a:first-child { flex: 1; min-height: 44px; }
   .topbar .ttl { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .topbar a.how { flex: none; min-height: 44px; min-width: 44px; justify-content: center; border-radius: 99px; }
+  .topbar .how { flex: none; min-height: 44px; min-width: 44px; justify-content: center; border-radius: 99px; background: none; border: 0; color: #fff; display: flex; align-items: center; cursor: pointer; }
+  .topbar form { display: contents; }
   .tabbar { display: grid; grid-template-columns: repeat(4, 1fr); position: fixed; left: 0; right: 0; bottom: 0; background: #fff; border-top: 1px solid var(--line); z-index: 25; padding-bottom: env(safe-area-inset-bottom); }
   .tabbar a { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 9px 4px 8px; font-size: .75rem; font-weight: 600; color: var(--ink2); text-decoration: none; min-height: 56px; }
   .tabbar a.on { color: var(--ink); }
   .tabbar a.on .ic { stroke: var(--tealink); }
   .head { flex-direction: column; gap: 12px; }
   .pub { padding: 0 16px; }
+  .pubhead .btn { white-space: nowrap; }
 }
 
 /* ---- Motion ---------------------------------------------------------------------------------------------
@@ -169,6 +185,10 @@ h3 { font-size: 1rem; font-weight: 600; }
 @keyframes vt-fade { from { opacity: 0; filter: blur(4px); } }
 @keyframes vt-rise { from { translate: 0 var(--shift); } }
 
+@media (max-width: 440px) {
+  .pubhead .logo .name { display: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   /* Reduced, not removed: no travelling, no looping, no blur; fades and state changes stay */
   :root { --shift: 0px; }
@@ -178,7 +198,7 @@ h3 { font-size: 1rem; font-weight: 600; }
   .empty svg.big ellipse, .empty svg.big circle { animation: none; stroke-dashoffset: 0; }
   .topbar { animation: fade-only .35s both; }
   .btn:hover, .btn:active { transform: none; }
-  .rail a.nav:hover .ic, .btn:hover .ic, .tabbar a.on .ic { transform: none; }
+  .rail .nav:hover .ic, .btn:hover .ic, .tabbar a.on .ic { transform: none; }
   ::view-transition-old(.page-out) { animation: 120ms linear both vt-fade reverse; }
   ::view-transition-new(.page-in) { animation: 220ms linear both vt-fade; }
 }
