@@ -105,12 +105,18 @@ export async function payOutAllTurns(committeeUrl: string) {
   if (committee.error) throw new Error(committee.error.message);
   const slots = await db.from("slots").select("id").eq("committee_id", committeeId);
   for (const slot of slots.data ?? []) {
-    const holder = await db.from("slot_holders").select("member_id").eq("slot_id", slot.id).single();
+    // Each holder receives the instalment for every period they covered (a slot that changed hands has more than one).
+    const holders = await db.from("slot_holders").select("member_id, from_period, to_period").eq("slot_id", slot.id);
+    const totals = new Map<string, number>();
+    for (const h of holders.data ?? []) {
+      const periods = (h.to_period ?? committee.data.periods) - h.from_period + 1;
+      totals.set(h.member_id, (totals.get(h.member_id) ?? 0) + committee.data.amount * periods);
+    }
     const paid = await db.rpc("record_payout", {
       p_committee_id: committeeId,
       p_slot_id: slot.id,
       p_paid_on: pakistanToday(),
-      p_split: [{ member_id: holder.data?.member_id, amount: committee.data.amount * committee.data.periods }],
+      p_split: [...totals].map(([member_id, amount]) => ({ member_id, amount })),
     });
     if (paid.error) throw new Error(`record_payout failed: ${paid.error.message}`);
   }
