@@ -281,3 +281,44 @@ a.li:hover { background: var(--wash); }
   .wizbar .btn.primary { flex: 2; }
   .two { row-gap: 28px; }
 }
+
+/* ── Members and slots (#6) ──────────────────────────────────────────────── */
+.subnav { display: flex; gap: 6px; margin: 0 0 20px; border-bottom: 1px solid var(--line); }
+.subnav a { padding: 10px 16px; font-weight: 600; color: var(--ink2); text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -1px; transition: color .15s, border-color .25s var(--ease); }
+.subnav a:hover { color: var(--ink); }
+.subnav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--peri); }
+.members { list-style: none; padding: 0; }
+.member { padding: 14px 18px; border-bottom: 1px solid var(--line2); }
+.member:last-child { border: 0; }
+.member .mrow { display: flex; gap: 14px; align-items: center; }
+.member .grow { flex: 1; min-width: 0; }
+.member .t { font-weight: 600; display: block; overflow-wrap: anywhere; }
+.member .s { font-size: .875rem; color: var(--ink2); display: block; overflow-wrap: anywhere; }
+.member .contact { margin-top: 2px; }
+.stepper { display: flex; align-items: center; gap: 8px; flex: none; }
+.stepper form { display: contents; }
+.stepper .n { min-width: 1.5ch; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stepper .btn { min-width: 40px; justify-content: center; padding-inline: 12px; }
+.stepper .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+.edit { margin-top: 4px; }
+.edit > summary { list-style: none; cursor: pointer; width: fit-content; margin-left: -12px; }
+.edit > summary::-webkit-details-marker { display: none; }
+.edit[open] > summary { color: var(--ink2); }
+.btn.danger { color: var(--late); }
+.btn:disabled { cursor: not-allowed; }
+.card-form { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px 18px; }
+.card-form .pair { grid-template-columns: 1fr; gap: 0; }
+@media (max-width: 640px) {
+  .subnav a { flex: 1; text-align: center; }
+  .member .mrow { align-items: flex-start; }
+}
+@media print {
+  .subnav, .stepper, .edit, .card-form { display: none !important; }
+}
+
+/* Two-column layout (ported from the prototype; it was missing) */
+.two { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 800px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.member .t { text-align: left; }
+.edit > form:first-of-type { background: var(--wash); border: 1px solid var(--line2); border-radius: var(--r); padding: 14px; margin-top: 6px; }
+.edit > form:not(:first-of-type) { background: none; border: 0; padding: 0; }

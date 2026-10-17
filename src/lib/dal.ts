@@ -24,3 +24,17 @@ export async function requireUser(): Promise<Organiser> {
   if (!user) redirect(SIGN_IN_PATH);
   return user;
 }
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const isUuid = (text: string) => UUID.test(text);
+
+/**
+ * One committee of the signed-in organiser, or null. Someone else's committee is invisible to this query
+ * (row-level security), so it looks exactly like one that does not exist. `cache` shares it within one page render.
+ */
+export const getCommittee = cache(async (id: string) => {
+  if (!isUuid(id)) return null;
+  const supabase = await createClient();
+  const { data } = await supabase.from("committees").select("*").eq("id", id).maybeSingle();
+  return data;
+});

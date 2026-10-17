@@ -3,22 +3,18 @@ import { notFound } from "next/navigation";
 import { Icon } from "@/components/Icon";
 import { PageTransition } from "@/components/PageTransition";
 import { PrintButton } from "@/components/PrintButton";
+import { CommitteeHeader } from "@/components/CommitteeHeader";
 import { ErrorNote } from "@/components/states";
 import { ORDER_LABELS, type OrderMethod } from "@/lib/agreement";
 import { formatDate, ordinal } from "@/lib/dates";
 import { formatRupees } from "@/lib/money";
-import { createClient } from "@/lib/supabase/server";
+import { getCommittee } from "@/lib/dal";
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const STATUS_CLASS = { forming: "form", running: "run", completed: "done" } as const;
-const STATUS_TEXT = { forming: "Forming", running: "Running", completed: "Completed" } as const;
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  if (!UUID.test(id)) return { title: "Committee" };
-  const supabase = await createClient();
-  const { data } = await supabase.from("committees").select("name").eq("id", id).maybeSingle();
-  return { title: data?.name ?? "Committee" };
+  const c = await getCommittee(id);
+  return { title: c?.name ?? "Committee" };
 }
 
 export default async function CommitteePage({
@@ -30,45 +26,25 @@ export default async function CommitteePage({
 }) {
   const { id } = await params;
   const { created, saved } = await searchParams;
-  if (!UUID.test(id)) notFound();
-
-  const supabase = await createClient();
-  // A committee that belongs to someone else is invisible to this query, so it looks exactly like one that does not exist.
-  const { data: c } = await supabase.from("committees").select("*").eq("id", id).maybeSingle();
+  const c = await getCommittee(id);
   if (!c) notFound();
 
   const money = (n: number) => formatRupees(n, { style: c.display_style, grouping: c.display_grouping });
-  const status = c.status as keyof typeof STATUS_CLASS;
   const yes = (b: boolean) => (b ? "Yes" : "No");
   const days = (n: number) => `${n} day${n === 1 ? "" : "s"}`;
 
   return (
     <PageTransition>
-      <div className="crumb">
-        <Link className="btn ghost small" href="/committees">
-          <Icon name="back" />
-          My committees
-        </Link>
-      </div>
-      <div className="head">
-        <div>
-          <h1 dir="auto" className="cname">
-            {c.name}
-          </h1>
-          <div className="meta">
-            <span className={`chip ${STATUS_CLASS[status]}`}>{STATUS_TEXT[status]}</span>
-            <span>
-              {money(c.amount)} &middot; {c.periods} periods &middot; starts {formatDate(c.start_date)}
-            </span>
-          </div>
-        </div>
+      <CommitteeHeader committee={c} active="agreement">
         <PrintButton>Print agreement</PrintButton>
-      </div>
+      </CommitteeHeader>
 
       {created ? (
         <div className="note ok rise" role="status" style={{ marginBottom: 16 }}>
           <Icon name="check" />
-          <span>Committee created. The agreement below is saved as the first entry in its history.</span>
+          <span>
+            Committee created. The agreement below is saved as the first entry in its history. Next, <Link href={`/committees/${id}/members`}>add the members</Link>.
+          </span>
         </div>
       ) : null}
       {saved === "partly" ? (
