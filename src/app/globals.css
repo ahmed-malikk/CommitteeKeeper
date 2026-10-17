@@ -322,3 +322,13 @@ a.li:hover { background: var(--wash); }
 .member .t { text-align: left; }
 .edit > form:first-of-type { background: var(--wash); border: 1px solid var(--line2); border-radius: var(--r); padding: 14px; margin-top: 6px; }
 .edit > form:not(:first-of-type) { background: none; border: 0; padding: 0; }
+
+/* ── Status and start (#7) ───────────────────────────────────────────────── */
+.status .stages { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; list-style: none; padding: 0; margin: 0 0 12px; color: var(--ink2); }
+.status .stages li { display: flex; align-items: center; gap: 8px; }
+.status .stages .chip { background: transparent; border: 1px solid var(--line); color: var(--ink2); }
+.status .stages .cur .chip { background: var(--ink); border-color: var(--ink); color: #fff; }
+.problems { margin: 4px 0 8px; padding-left: 1.2em; }
+.problems li { margin-bottom: 2px; }
+.btn:disabled { opacity: .6; }
+@media print { .status { display: none; } }

@@ -38,3 +38,15 @@ export const getCommittee = cache(async (id: string) => {
   const { data } = await supabase.from("committees").select("*").eq("id", id).maybeSingle();
   return data;
 });
+
+/** The committee's slots in the shape the rule checks in `committee.ts` expect: has a holder, has a place in the order, paid out. */
+export const getSlotInfo = cache(async (committeeId: string) => {
+  const supabase = await createClient();
+  const [slots, holders] = await Promise.all([
+    supabase.from("slots").select("id, position, paid_out").eq("committee_id", committeeId),
+    supabase.from("slot_holders").select("slot_id, slots!inner(committee_id)").eq("slots.committee_id", committeeId),
+  ]);
+  if (slots.error || holders.error) return null;
+  const held = new Set((holders.data ?? []).map((h) => h.slot_id));
+  return (slots.data ?? []).map((s) => ({ hasHolder: held.has(s.id), position: s.position as number | null, paidOut: s.paid_out as boolean }));
+});

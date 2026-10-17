@@ -6,9 +6,11 @@ import { PrintButton } from "@/components/PrintButton";
 import { CommitteeHeader } from "@/components/CommitteeHeader";
 import { ErrorNote } from "@/components/states";
 import { ORDER_LABELS, type OrderMethod } from "@/lib/agreement";
-import { formatDate, ordinal } from "@/lib/dates";
+import { formatDate, ordinal, todayInPakistan } from "@/lib/dates";
 import { formatRupees } from "@/lib/money";
-import { getCommittee } from "@/lib/dal";
+import { StatusPanel } from "@/components/StatusPanel";
+import { startProblems, lastDueDate } from "@/lib/committee";
+import { getCommittee, getSlotInfo } from "@/lib/dal";
 
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -28,6 +30,18 @@ export default async function CommitteePage({
   const { created, saved } = await searchParams;
   const c = await getCommittee(id);
   if (!c) notFound();
+
+  const slots = (await getSlotInfo(id)) ?? [];
+  const problems = startProblems({
+    status: c.status,
+    amount: c.amount,
+    periods: c.periods,
+    startDate: c.start_date,
+    dueDay: c.due_day,
+    orderMethod: c.order_method,
+    slots,
+  });
+  const lastDue = formatDate(lastDueDate(c.start_date, c.periods, c.due_day));
 
   const money = (n: number) => formatRupees(n, { style: c.display_style, grouping: c.display_grouping });
   const yes = (b: boolean) => (b ? "Yes" : "No");
@@ -56,6 +70,15 @@ export default async function CommitteePage({
       ) : null}
 
       <div className="two rise" style={{ ["--i" as string]: 2 }}>
+        <div className="stack">
+        <StatusPanel
+          committeeId={id}
+          status={c.status}
+          problems={c.status === "forming" ? problems : []}
+          startedInThePast={c.start_date < todayInPakistan()}
+          startText={formatDate(c.start_date)}
+          lastDueText={lastDue}
+        />
         <section className="agreement">
           <h2>Agreement</h2>
           <p className="print-only sm" dir="auto">
@@ -73,6 +96,7 @@ export default async function CommitteePage({
             Amount, number of periods and start date are fixed once the committee is running.
           </p>
         </section>
+        </div>
 
         <div className="stack">
           <section>
