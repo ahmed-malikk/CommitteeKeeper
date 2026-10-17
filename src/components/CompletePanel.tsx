@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { completeCommittee, type CompleteState } from "@/app/(app)/committees/[id]/complete-action";
 import { SETTLEMENT_NOTE_MAX } from "@/lib/committee";
 import { Icon } from "./Icon";
+import { useConfirmFocus } from "./useConfirmFocus";
 import { ErrorNote } from "./states";
 
 const initial: CompleteState = { problems: [], error: null, completed: false };
@@ -23,6 +24,7 @@ export function CompletePanel({ committeeId, unrecorded, problems, problemsWithN
   const [state, action, pending] = useActionState(completeCommittee, initial);
   const [note, setNote] = useState("");
   const [asking, setAsking] = useState(false);
+  const { box, trigger } = useConfirmFocus(asking);
 
   const fromServer = state.problems.length > 0 ? state.problems : null;
   const shown = fromServer ?? (note.trim() === "" ? problems : problemsWithNote);
@@ -71,7 +73,7 @@ export function CompletePanel({ committeeId, unrecorded, problems, problemsWithN
           </div>
         </div>
       ) : asking ? (
-        <div className="note" role="group" aria-label="Confirm completion">
+        <div className="note" role="group" aria-label="Confirm completion" ref={box} tabIndex={-1}>
           <Icon name="alert" />
           <div>
             <b>Complete this committee?</b> Its record becomes read-only. Nothing in it can be changed afterwards, and this cannot be undone.
@@ -93,7 +95,7 @@ export function CompletePanel({ committeeId, unrecorded, problems, problemsWithN
             Complete committee
           </button>
         ) : (
-          <button className="btn primary" type="button" onClick={() => setAsking(true)}>
+          <button className="btn primary" type="button" ref={trigger} onClick={() => setAsking(true)}>
             Complete committee
           </button>
         )

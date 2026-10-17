@@ -24,6 +24,13 @@ test.describe("turn order by hand", () => {
     await expect(page.getByRole("button", { name: "Move Ali earlier" })).toBeDisabled();
     await expect(page.getByRole("button", { name: "Move مریم خان later" })).toBeDisabled();
 
+    // Moving the last turn up announces its new place, and a button that reaches the end keeps keyboard focus.
+    await page.getByRole("button", { name: "Move Sara later" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("status").filter({ hasText: "Sara is now turn 3 of 3" })).toBeAttached();
+    await expect(page.getByRole("button", { name: "Move Sara later" })).toBeFocused();
+    await page.getByRole("button", { name: "Undo changes" }).click();
+
     await page.getByRole("button", { name: "Move مریم خان earlier" }).click();
     await page.getByRole("button", { name: "Move مریم خان earlier" }).click();
     expect(await names(page)).toEqual(["مریم خان", "Ali", "Sara"]);

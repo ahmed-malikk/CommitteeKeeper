@@ -43,6 +43,11 @@ test.describe("completing a committee", () => {
     await expect(page.getByText("Can’t complete yet:")).toHaveCount(0);
     await page.getByRole("button", { name: "Complete committee" }).click();
     await expect(page.getByText("Complete this committee?")).toBeVisible();
+    // Keyboard focus moves into the question, and comes back to the button if the organiser backs out.
+    await expect(page.getByRole("group", { name: "Confirm completion" })).toBeFocused();
+    await page.getByRole("button", { name: "Not yet" }).click();
+    await expect(page.getByRole("button", { name: "Complete committee" })).toBeFocused();
+    await page.getByRole("button", { name: "Complete committee" }).click();
     await page.getByRole("button", { name: "Yes, complete it" }).click();
 
     await expect(page.getByText("This committee is completed. Its record is read-only.")).toBeVisible({ timeout: 15_000 });

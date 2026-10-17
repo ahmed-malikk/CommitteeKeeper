@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { startCommittee, type StartState } from "@/app/(app)/committees/[id]/start-action";
 import { CompletePanel } from "./CompletePanel";
 import { Icon } from "./Icon";
+import { useConfirmFocus } from "./useConfirmFocus";
 import { ErrorNote } from "./states";
 
 const STAGES = [
@@ -31,6 +32,7 @@ type Props = {
 export function StatusPanel({ committeeId, status, problems, startedInThePast, startText, lastDueText, completion }: Props) {
   const [state, action, pending] = useActionState(startCommittee, initial);
   const [asking, setAsking] = useState(false);
+  const { box, trigger } = useConfirmFocus(asking);
   const shown = state.problems.length > 0 ? state.problems : problems;
   const blocked = shown.length > 0;
 
@@ -83,7 +85,7 @@ export function StatusPanel({ committeeId, status, problems, startedInThePast, s
                 The last payment is due <b>{lastDueText}</b>.
               </p>
               {asking ? (
-                <div className="note" role="group" aria-label="Confirm start">
+                <div className="note" role="group" aria-label="Confirm start" ref={box} tabIndex={-1}>
                   <Icon name="alert" />
                   <div>
                     <b>Start this committee?</b> Starting records the agreement in the history. After that the amount, number of periods and start date can&rsquo;t change, and slots and members can&rsquo;t be removed.
@@ -110,7 +112,7 @@ export function StatusPanel({ committeeId, status, problems, startedInThePast, s
                 Start committee
               </button>
             ) : (
-              <button className="btn primary" type="button" onClick={() => setAsking(true)}>
+              <button className="btn primary" type="button" ref={trigger} onClick={() => setAsking(true)}>
                 Start committee
               </button>
             )

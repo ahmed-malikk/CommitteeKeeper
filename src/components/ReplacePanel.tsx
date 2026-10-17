@@ -111,8 +111,8 @@ export function ReplacePanel({ committeeId, amount, periods, display, slots, mem
           <div>
             <b>When this slot&rsquo;s pot is paid out, it is split by the periods each person was responsible for:</b>
             <ul className="problems">
-              {shares.map((s) => (
-                <li key={s.name} dir="auto">
+              {shares.map((s, i) => (
+                <li key={i} dir="auto">
                   {s.name}: {money(s.amount)}
                 </li>
               ))}

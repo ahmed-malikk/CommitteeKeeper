@@ -27,6 +27,14 @@ export function TurnOrderEditor({ committeeId, locked, movable }: Props) {
   const ids = arranged.length === original.length && arranged.every((id) => original.includes(id)) ? arranged : original;
   const byId = new Map(movable.map((t) => [t.id, t]));
   const changed = !sameList(ids, original);
+  const [said, setSaid] = useState("");
+
+  function move(index: number, step: -1 | 1, label: string) {
+    const target = index + step;
+    if (pending || target < 0 || target >= ids.length) return;
+    setIds(moveBy(ids, index, step));
+    setSaid(`${label} is now turn ${locked.length + target + 1} of ${locked.length + ids.length}`);
+  }
 
   return (
     <form action={action} aria-label="Arrange the turns">
@@ -38,6 +46,9 @@ export function TurnOrderEditor({ committeeId, locked, movable }: Props) {
         </div>
       ) : null}
 
+      <p className="sr-only" role="status">
+        {said}
+      </p>
       <ol className="list turns">
         {locked.map((t, i) => (
           <li key={t.id} className="li turn paid">
@@ -80,10 +91,11 @@ export function TurnOrderEditor({ committeeId, locked, movable }: Props) {
                 ) : null}
               </span>
               <span className="movers" role="group" aria-label={`Move ${t.label}`}>
-                <button type="button" className="btn secondary small" aria-label={`Move ${t.label} earlier`} disabled={i === 0 || pending} onClick={() => setIds(moveBy(ids, i, -1))}>
+                {/* aria-disabled, not disabled: a button that disables itself under the finger drops keyboard focus. */}
+                <button type="button" className="btn secondary small" aria-label={`Move ${t.label} earlier`} aria-disabled={i === 0 || pending} onClick={() => move(i, -1, t.label)}>
                   <Icon name="up" />
                 </button>
-                <button type="button" className="btn secondary small" aria-label={`Move ${t.label} later`} disabled={i === ids.length - 1 || pending} onClick={() => setIds(moveBy(ids, i, 1))}>
+                <button type="button" className="btn secondary small" aria-label={`Move ${t.label} later`} aria-disabled={i === ids.length - 1 || pending} onClick={() => move(i, 1, t.label)}>
                   <Icon name="down" />
                 </button>
               </span>
