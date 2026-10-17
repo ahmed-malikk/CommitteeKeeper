@@ -353,3 +353,15 @@ a.li:hover { background: var(--wash); }
 .drawlog { list-style: none; padding: 0; margin: 0; }
 .card-form h3 { font-size: 1.0625rem; margin: 0 0 6px; }
 .methodchange > summary { margin-left: 0; }
+
+/* ── Payments (#14) ──────────────────────────────────────────────────────── */
+.pager { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.pagerlabel { font-size: 1.25rem; margin: 0; text-align: center; flex: 1; }
+.pagerlabel .sm { display: block; font-weight: 400; font-size: .875rem; }
+.sentence { margin: 0 0 18px; text-align: center; color: var(--ink2); }
+.sentence b { color: var(--ink); }
+@media (max-width: 800px) {
+  .subnav { overflow-x: auto; scrollbar-width: none; }
+  .subnav a { padding-inline: 12px; white-space: nowrap; }
+}
+@media print { .pager { display: none !important; } }

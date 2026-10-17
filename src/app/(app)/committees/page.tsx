@@ -84,7 +84,7 @@ export default async function Committees() {
                         : `${sm.paidThisPeriod} of ${sm.slotCount} paid this month`
                       : null;
                   return (
-                    <Link className="li" key={c.id} href={`/committees/${c.id}`}>
+                    <Link className="li" key={c.id} href={status === "running" ? `/committees/${c.id}/payments` : `/committees/${c.id}`}>
                       <div className="grow">
                         <span className="t" dir="auto">
                           {c.name}
@@ -119,7 +119,7 @@ export default async function Committees() {
                 <>
                   <div className="list">
                     {needs.map(({ c, cell, who }) => (
-                      <Link className="li" key={`${c.id}-${cell.slotId}-${cell.period}`} href={`/committees/${c.id}`}>
+                      <Link className="li" key={`${c.id}-${cell.slotId}-${cell.period}`} href={`/committees/${c.id}/payments?period=${cell.period}&slot=${cell.slotId}#record`}>
                         <div className="grow">
                           <span className="t" dir="auto">
                             {who} is {lateText(cell.daysLate)}
@@ -134,7 +134,7 @@ export default async function Committees() {
                   </div>
                   {lateTotal > needs.length ? (
                     <p className="sm mut" style={{ marginTop: 10 }}>
-                      Showing the {needs.length} longest late of {lateTotal}. The rest are inside each committee.
+                      Showing the {needs.length} longest late of {lateTotal}. The rest are on each committee&rsquo;s Payments page.
                     </p>
                   ) : null}
                 </>

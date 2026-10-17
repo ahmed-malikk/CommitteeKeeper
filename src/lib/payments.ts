@@ -87,3 +87,37 @@ export function lateText(days: number): string {
   return `late by ${days} day${days === 1 ? "" : "s"}`;
 }
 
+/** The longest private note that can be stored with a payment. */
+export const PAYMENT_NOTE_MAX = 200;
+
+export type PaymentInput = { slotId: string; period: number; paidOn: string; method: string; note: string };
+export type PaymentProblems = Partial<Record<"slot" | "period" | "paidOn" | "method" | "note", string>>;
+
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+const isRealDate = (text: string) => {
+  const m = ISO_DATE.exec(text);
+  if (!m) return false;
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  return d.toISOString().slice(0, 10) === text;
+};
+
+/**
+ * Checks what the organiser entered before it goes to the database (which checks again and has the last word).
+ * The amount is never an input: it is always the full instalment (rule M5).
+ */
+export function paymentProblems(input: PaymentInput, periods: number, today: string): PaymentProblems {
+  const problems: PaymentProblems = {};
+  if (input.slotId === "") problems.slot = "Choose the slot.";
+  if (!Number.isInteger(input.period) || input.period < 1 || input.period > periods) problems.period = `Choose a period from 1 to ${periods}.`;
+  if (!isRealDate(input.paidOn)) problems.paidOn = "Enter the date the money was paid.";
+  else if (input.paidOn > today) problems.paidOn = "The payment date can’t be in the future. Enter the day it was really paid.";
+  if (!(METHODS as readonly string[]).includes(input.method)) problems.method = "Choose how it was paid.";
+  if ([...input.note.trim()].length > PAYMENT_NOTE_MAX) problems.note = `Keep the note to ${PAYMENT_NOTE_MAX} characters or fewer.`;
+  return problems;
+}
+
+/** "Oct 2026": the month a period falls in, for labels. */
+export function periodLabel(startDate: string, period: number): string {
+  const [y, m] = dueDateFor(startDate, 1, period).split("-").map(Number);
+  return `${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][m - 1]} ${y}`;
+}

@@ -181,3 +181,18 @@ export function payerName(holders: Map<string, HolderStretch[]>, slotId: string,
   const h = (holders.get(slotId) ?? []).find((s) => s.fromPeriod <= period && (s.toPeriod === null || s.toPeriod >= period));
   return h?.name ?? "Unknown";
 }
+
+export type PaymentRow = { id: string; slotId: string; memberId: string; period: number; paidOn: string; method: string };
+
+/** The payments of one committee that count (corrected or cancelled ones are left out). Null when the database could not be reached. */
+export const getPayments = cache(async (committeeId: string): Promise<PaymentRow[] | null> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("payments_current")
+    .select("id, slot_id, member_id, period, paid_on, method")
+    .eq("committee_id", committeeId)
+    .order("period")
+    .order("paid_on");
+  if (error) return null;
+  return (data ?? []).map((p) => ({ id: p.id, slotId: p.slot_id, memberId: p.member_id, period: p.period, paidOn: p.paid_on, method: p.method }));
+});

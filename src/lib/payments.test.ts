@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cellOf, currentPeriod, dueDateFor, lateText, summarise, type CommitteeTerms } from "./payments";
+import { cellOf, currentPeriod, dueDateFor, lateText, paymentProblems, periodLabel, summarise, type CommitteeTerms } from "./payments";
 
 const terms: CommitteeTerms = { startDate: "2026-10-01", dueDay: 10, graceDays: 2, periods: 3 };
 
@@ -73,3 +73,39 @@ describe("lateText", () => {
   });
 });
 
+describe("paymentProblems", () => {
+  const ok = { slotId: "s1", period: 2, paidOn: "2026-10-10", method: "cash", note: "" };
+
+  it("accepts a complete, valid entry (the amount is not an input at all)", () => {
+    expect(paymentProblems(ok, 12, "2026-10-17")).toEqual({});
+    expect(paymentProblems({ ...ok, paidOn: "2026-10-17" }, 12, "2026-10-17")).toEqual({}); // today is fine
+  });
+
+  it("refuses a date in the future, with the reason (FR-7)", () => {
+    expect(paymentProblems({ ...ok, paidOn: "2026-10-18" }, 12, "2026-10-17").paidOn).toMatch(/future/);
+  });
+
+  it("refuses a missing or impossible date", () => {
+    expect(paymentProblems({ ...ok, paidOn: "" }, 12, "2026-10-17").paidOn).toBeDefined();
+    expect(paymentProblems({ ...ok, paidOn: "2026-02-30" }, 12, "2026-10-17").paidOn).toBeDefined();
+  });
+
+  it("refuses an unknown method, a missing slot and a period outside the committee", () => {
+    const p = paymentProblems({ slotId: "", period: 13, paidOn: "2026-10-10", method: "cheque", note: "" }, 12, "2026-10-17");
+    expect(Object.keys(p).sort()).toEqual(["method", "period", "slot"]);
+    expect(paymentProblems({ ...ok, period: 0 }, 12, "2026-10-17").period).toBeDefined();
+    expect(paymentProblems({ ...ok, period: 1.5 }, 12, "2026-10-17").period).toBeDefined();
+  });
+
+  it("limits the private note to 200 characters", () => {
+    expect(paymentProblems({ ...ok, note: "x".repeat(200) }, 12, "2026-10-17").note).toBeUndefined();
+    expect(paymentProblems({ ...ok, note: "x".repeat(201) }, 12, "2026-10-17").note).toBeDefined();
+  });
+});
+
+describe("periodLabel", () => {
+  it("names the month a period falls in, across a year end", () => {
+    expect(periodLabel("2026-10-01", 1)).toBe("Oct 2026");
+    expect(periodLabel("2026-10-01", 4)).toBe("Jan 2027");
+  });
+});
