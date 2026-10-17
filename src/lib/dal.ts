@@ -3,6 +3,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SIGN_IN_PATH } from "@/lib/access";
+import type { PaidRecord } from "@/lib/payments";
 import { holderLabel, type DrawEvent, type HolderStretch, type SwapEvent, type Turn } from "@/lib/turns";
 
 export type Organiser = { id: string; email: string };
@@ -130,4 +131,53 @@ export async function getCompletionFacts(committeeId: string, periods: number) {
   if (!slots || recorded === null) return null;
   // Every slot pays every period, so periods x periods instalments are expected in all (same rule as the database).
   return { slots, unrecorded: Math.max(0, periods * periods - recorded) };
+}
+
+export type PaymentFacts = {
+  slotIds: string[];
+  paid: PaidRecord[];
+  /** Who holds each slot, with the periods they held it (needed to name the payer of a given period). */
+  holders: Map<string, HolderStretch[]>;
+};
+
+/**
+ * Slots, counted payments and holders for several committees at once (the home screen), keyed by committee.
+ * Null when the database could not be reached. Row-level security limits every query to the organiser's own committees.
+ */
+export async function getPaymentFacts(committeeIds: string[]): Promise<Map<string, PaymentFacts> | null> {
+  const facts = new Map<string, PaymentFacts>(committeeIds.map((id) => [id, { slotIds: [], paid: [], holders: new Map() }]));
+  if (committeeIds.length === 0) return facts;
+  const supabase = await createClient();
+  const [slots, payments, holders] = await Promise.all([
+    supabase.from("slots").select("id, committee_id, created_at").in("committee_id", committeeIds).order("created_at"),
+    supabase.from("payments_current").select("committee_id, slot_id, period, paid_on").in("committee_id", committeeIds),
+    supabase
+      .from("slot_holders")
+      .select("slot_id, member_id, from_period, to_period, members(name), slots!inner(committee_id)")
+      .in("slots.committee_id", committeeIds)
+      .order("from_period"),
+  ]);
+  if (slots.error || payments.error || holders.error) return null;
+
+  const committeeOfSlot = new Map<string, string>();
+  for (const s of slots.data ?? []) {
+    facts.get(s.committee_id)?.slotIds.push(s.id);
+    committeeOfSlot.set(s.id, s.committee_id);
+  }
+  for (const p of payments.data ?? []) facts.get(p.committee_id)?.paid.push({ slotId: p.slot_id, period: p.period, paidOn: p.paid_on });
+  for (const h of holders.data ?? []) {
+    const f = facts.get(committeeOfSlot.get(h.slot_id) ?? "");
+    if (!f) continue;
+    const member = h.members as unknown as { name: string } | null;
+    const list = f.holders.get(h.slot_id) ?? [];
+    list.push({ memberId: h.member_id, name: member?.name ?? "Unknown", fromPeriod: h.from_period, toPeriod: h.to_period });
+    f.holders.set(h.slot_id, list);
+  }
+  return facts;
+}
+
+/** The name of whoever held a slot in a given period. */
+export function payerName(holders: Map<string, HolderStretch[]>, slotId: string, period: number): string {
+  const h = (holders.get(slotId) ?? []).find((s) => s.fromPeriod <= period && (s.toPeriod === null || s.toPeriod >= period));
+  return h?.name ?? "Unknown";
 }

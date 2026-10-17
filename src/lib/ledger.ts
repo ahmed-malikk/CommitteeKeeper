@@ -39,3 +39,12 @@ export function splitPot(amount: number, periods: number, holders: Holder[]): Sh
   }
   return [...totals].map(([memberId, total]) => ({ memberId, amount: total }));
 }
+
+const DAY = 24 * 60 * 60 * 1000;
+const dayNumber = (date: string) => Math.floor(Date.parse(`${date}T00:00:00Z`) / DAY);
+
+// Task 9: how many whole days late? dueDate and onDate are "YYYY-MM-DD". Grace days are free.
+// On time (or early) is 0, never negative.
+export function lateByDays(dueDate: string, onDate: string, graceDays: number): number {
+  return Math.max(0, dayNumber(onDate) - dayNumber(dueDate) - graceDays);
+}

@@ -31,6 +31,15 @@ const PATHS = {
       <path d="M8 11V7a4 4 0 018 0v4" />
     </>
   ),
+  chev: <path d="M9 18l6-6-6-6" />,
+  x: <path d="M18 6L6 18M6 6l12 12" />,
+  image: (
+    <>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <path d="M21 15l-5-5L5 21" />
+    </>
+  ),
   out: <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />,
 } as const;
 

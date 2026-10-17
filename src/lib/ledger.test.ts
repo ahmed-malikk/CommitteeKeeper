@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { duesFor, potOf, splitPot } from "./ledger";
+import { duesFor, lateByDays, potOf, splitPot } from "./ledger";
 
 describe("Task 6 potOf and duesFor", () => {
   it("the pot is the instalment times the number of slots (TC-007)", () => {
@@ -92,5 +92,38 @@ describe("Task 7 splitPot", () => {
     expect(() => splitPot(1000, 12, [{ memberId: "a", fromPeriod: 2, toPeriod: null }])).toThrow(message); // starts late
     expect(() => splitPot(1000, 12, [{ memberId: "a", fromPeriod: 1, toPeriod: 10 }])).toThrow(message); // stops early
     expect(() => splitPot(1000, 12, [])).toThrow(message); // nobody
+  });
+});
+
+describe("Task 9 lateByDays", () => {
+  it("is 0 on the due day", () => {
+    expect(lateByDays("2026-01-05", "2026-01-05", 0)).toBe(0);
+  });
+
+  it("is 0 when paid early", () => {
+    expect(lateByDays("2026-01-05", "2026-01-01", 0)).toBe(0);
+  });
+
+  it("counts the days after the due day", () => {
+    expect(lateByDays("2026-01-05", "2026-01-08", 0)).toBe(3);
+  });
+
+  it("does not count the grace days", () => {
+    expect(lateByDays("2026-01-05", "2026-01-08", 2)).toBe(1);
+    expect(lateByDays("2026-01-05", "2026-01-07", 2)).toBe(0);
+    expect(lateByDays("2026-01-05", "2026-01-06", 2)).toBe(0);
+  });
+
+  it("counts across a month end (TC-030)", () => {
+    expect(lateByDays("2026-01-28", "2026-02-02", 0)).toBe(5);
+  });
+
+  it("knows 2028 is a leap year", () => {
+    expect(lateByDays("2028-02-28", "2028-03-01", 0)).toBe(2);
+    expect(lateByDays("2027-02-28", "2027-03-01", 0)).toBe(1);
+  });
+
+  it("counts across a year end", () => {
+    expect(lateByDays("2026-12-28", "2027-01-03", 0)).toBe(6);
   });
 });
