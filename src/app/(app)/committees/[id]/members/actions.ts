@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getCommittee, isUuid, requireUser } from "@/lib/dal";
 import { validateMember, validateSlotCount, type MemberProblems } from "@/lib/member";
 import { createClient } from "@/lib/supabase/server";
@@ -131,4 +132,35 @@ export async function removeSlot(previous: MemberState, formData: FormData): Pro
   if (error) return fail(explain(error, "remove the slot"), {}, previous);
   refresh(target.id);
   return ok(previous);
+}
+
+/**
+ * A member leaves and a replacement takes over one slot from a later period (rules L1 to L3). The database checks that the
+ * leaver has no payments recorded from that period on; the split of the pot is worked out by `splitPot` when it is paid out.
+ */
+export async function replaceHolder(previous: MemberState, formData: FormData): Promise<MemberState> {
+  const target = await open(formData);
+  if (!target) return fail("That committee was not found.", {}, previous);
+  const slotId = text(formData, "slotId");
+  const memberId = text(formData, "memberId");
+  if (!isUuid(slotId) || !isUuid(memberId)) return fail("Choose the slot and the replacement.", {}, previous);
+  const fromPeriod = Number(text(formData, "fromPeriod"));
+  if (!Number.isInteger(fromPeriod) || fromPeriod < 2 || fromPeriod > target.committee.periods) {
+    return fail(`Choose a period from 2 to ${target.committee.periods}.`, {}, previous);
+  }
+  const reason = text(formData, "reason").trim();
+  if ([...reason].length > 200) return fail("Keep the reason to 200 characters or fewer.", {}, previous);
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("replace_holder", {
+    p_committee_id: target.id,
+    p_slot_id: slotId,
+    p_new_member_id: memberId,
+    p_from_period: fromPeriod,
+    p_reason: reason === "" ? null : reason,
+  });
+  if (error) return fail(explain(error, "hand the slot over"), {}, previous);
+  refresh(target.id);
+  revalidatePath(`/committees/${target.id}/turns`);
+  redirect(`/committees/${target.id}/members?replaced=1`);
 }

@@ -62,7 +62,7 @@ export const getTurns = cache(async (committeeId: string, periods: number): Prom
     supabase.from("slots").select("id, position, paid_out, created_at").eq("committee_id", committeeId).order("created_at"),
     supabase
       .from("slot_holders")
-      .select("slot_id, from_period, to_period, members(name), slots!inner(committee_id)")
+      .select("slot_id, member_id, from_period, to_period, members(name), slots!inner(committee_id)")
       .eq("slots.committee_id", committeeId)
       .order("from_period"),
   ]);
@@ -72,7 +72,7 @@ export const getTurns = cache(async (committeeId: string, periods: number): Prom
   for (const h of holders.data ?? []) {
     const member = h.members as unknown as { name: string } | null;
     const list = bySlot.get(h.slot_id) ?? [];
-    list.push({ name: member?.name ?? "Unknown", fromPeriod: h.from_period, toPeriod: h.to_period });
+    list.push({ memberId: h.member_id, name: member?.name ?? "Unknown", fromPeriod: h.from_period, toPeriod: h.to_period });
     bySlot.set(h.slot_id, list);
   }
 

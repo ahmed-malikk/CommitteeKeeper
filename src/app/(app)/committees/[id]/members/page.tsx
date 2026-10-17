@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
 import { CommitteeHeader } from "@/components/CommitteeHeader";
 import { Icon } from "@/components/Icon";
+import { ReplacePanel } from "@/components/ReplacePanel";
 import { AddMemberForm, MemberRow } from "@/components/MemberForms";
 import { PageTransition } from "@/components/PageTransition";
 import { ErrorNote } from "@/components/states";
-import { getCommittee } from "@/lib/dal";
+import { getCommittee, getTurns } from "@/lib/dal";
 import { duesFor, potOf } from "@/lib/ledger";
 import { formatRupees } from "@/lib/money";
 import { createClient } from "@/lib/supabase/server";
@@ -15,8 +16,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return { title: c ? `Members · ${c.name}` : "Members" };
 }
 
-export default async function MembersPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function MembersPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ replaced?: string }> }) {
   const { id } = await params;
+  const { replaced } = await searchParams;
   const c = await getCommittee(id);
   if (!c) notFound();
 
@@ -24,23 +26,39 @@ export default async function MembersPage({ params }: { params: Promise<{ id: st
   const [members, slots, holders] = await Promise.all([
     supabase.from("members").select("id, name, email, phone").eq("committee_id", id).order("created_at"),
     supabase.from("slots").select("id").eq("committee_id", id),
-    supabase.from("slot_holders").select("slot_id, member_id, slots!inner(committee_id)").eq("slots.committee_id", id),
+    supabase.from("slot_holders").select("slot_id, member_id, to_period, slots!inner(committee_id)").eq("slots.committee_id", id),
   ]);
   const failed = members.error || slots.error || holders.error;
 
   const slotCount = slots.data?.length ?? 0;
   const perMember = new Map<string, number>();
-  for (const h of holders.data ?? []) perMember.set(h.member_id, (perMember.get(h.member_id) ?? 0) + 1);
+  const earlierPerMember = new Map<string, number>();
+  // Only slots a member holds now count; a stretch that ended when someone took over no longer adds to what they owe.
+  for (const h of holders.data ?? []) {
+    const book = h.to_period === null ? perMember : earlierPerMember;
+    book.set(h.member_id, (book.get(h.member_id) ?? 0) + 1);
+  }
 
   const format = { style: c.display_style, grouping: c.display_grouping } as const;
   const money = (n: number) => formatRupees(n, format);
   const forming = c.status === "forming";
   const room = c.periods - slotCount;
   const complete = slotCount === c.periods;
+  const running = c.status === "running";
+  const turns = running ? await getTurns(id, c.periods) : null;
+  const replaceSlots = (turns ?? []).filter((t) => t.holders.length > 0).map((t) => ({ id: t.id, label: t.label, holders: t.holders }));
+  const replaceMembers = (members.data ?? []).map((m) => ({ id: m.id, name: m.name }));
 
   return (
     <PageTransition>
       <CommitteeHeader committee={c} active="members" />
+
+      {replaced === "1" ? (
+        <p className="note ok" role="status" style={{ marginBottom: 14 }}>
+          <Icon name="check" />
+          <span>Done. The new holder is in the history, and the split of that slot&rsquo;s pot follows the periods each person covers.</span>
+        </p>
+      ) : null}
 
       {failed ? (
         <ErrorNote>We couldn&rsquo;t load the members. Check the connection and refresh the page.</ErrorNote>
@@ -75,6 +93,7 @@ export default async function MembersPage({ params }: { params: Promise<{ id: st
                       committeeId={id}
                       member={m}
                       slots={held}
+                      earlier={earlierPerMember.get(m.id) ?? 0}
                       duesText={`owes ${money(duesFor(c.amount, held))} each period`}
                       canChangeSlots={forming}
                       canRemove={forming}
@@ -94,6 +113,18 @@ export default async function MembersPage({ params }: { params: Promise<{ id: st
             <p className="sm mut" style={{ marginTop: 10 }}>
               Email and phone are visible to you only. Members never see each other&rsquo;s details.
             </p>
+            {running && replaceSlots.length > 0 && replaceMembers.length >= 2 ? (
+              <div style={{ marginTop: 24 }}>
+                <ReplacePanel
+                  committeeId={id}
+                  amount={c.amount}
+                  periods={c.periods}
+                  display={{ style: c.display_style, grouping: c.display_grouping }}
+                  slots={replaceSlots}
+                  members={replaceMembers}
+                />
+              </div>
+            ) : null}
           </section>
         </div>
       )}

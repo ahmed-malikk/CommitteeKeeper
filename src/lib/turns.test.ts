@@ -1,17 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { describeDraw, describeSwap, holderLabel, inPlayOrder, moveBy, sameList } from "./turns";
+import { describeDraw, describeSwap, holderLabel, inPlayOrder, moveBy, potSplit, previewReplacement, sameList } from "./turns";
 
 describe("holderLabel", () => {
   it("is just the name for a slot with one holder", () => {
-    expect(holderLabel([{ name: "Ali", fromPeriod: 1, toPeriod: null }], 12)).toBe("Ali");
+    expect(holderLabel([{ memberId: "ali", name: "Ali", fromPeriod: 1, toPeriod: null }], 12)).toBe("Ali");
   });
 
   it("shows the periods each person covers after a replacement", () => {
     const holders = [
-      { name: "Ali", fromPeriod: 1, toPeriod: 3 },
-      { name: "Sara", fromPeriod: 4, toPeriod: null },
+      { memberId: "ali", name: "Ali", fromPeriod: 1, toPeriod: 3 },
+      { memberId: "sara", name: "Sara", fromPeriod: 4, toPeriod: null },
     ];
     expect(holderLabel(holders, 12)).toBe("Ali (periods 1 to 3), Sara (4 to 12)");
+  });
+
+  it("says period, not periods, for a stretch of one period", () => {
+    const holders = [
+      { memberId: "ali", name: "Ali", fromPeriod: 1, toPeriod: 1 },
+      { memberId: "sara", name: "Sara", fromPeriod: 2, toPeriod: null },
+    ];
+    expect(holderLabel(holders, 4)).toBe("Ali (period 1), Sara (2 to 4)");
   });
 
   it("says so when nobody holds the slot", () => {
@@ -91,5 +99,47 @@ describe("describeSwap", () => {
     const line = describeSwap({ seq: 1, happenedOn: "2026-04-02", payload: {} }, labelOf);
     expect(line.detail).toBe("a turn: turn ? to ?. a turn: turn ? to ?.");
     expect(line.reason).toBeNull();
+  });
+});
+
+describe("potSplit", () => {
+  const ali = { memberId: "ali", name: "Ali", fromPeriod: 1, toPeriod: 3 };
+  const sara = { memberId: "sara", name: "Sara", fromPeriod: 4, toPeriod: null };
+
+  it("splits Rs 12,000 as Rs 3,000 and Rs 9,000 (TC-034)", () => {
+    expect(potSplit([ali, sara], 1000, 12)).toEqual([
+      { name: "Ali", amount: 3000 },
+      { name: "Sara", amount: 9000 },
+    ]);
+  });
+
+  it("has nothing to split when one person held the slot all along", () => {
+    expect(potSplit([{ memberId: "ali", name: "Ali", fromPeriod: 1, toPeriod: null }], 1000, 12)).toBeNull();
+  });
+
+  it("shows nothing rather than a wrong figure when the stretches do not add up", () => {
+    expect(potSplit([ali, { ...sara, fromPeriod: 6 }], 1000, 12)).toBeNull();
+  });
+});
+
+describe("previewReplacement", () => {
+  it("ends the current holder the period before and gives the rest to the replacement", () => {
+    const holders = [{ memberId: "ali", name: "Ali", fromPeriod: 1, toPeriod: null }];
+    expect(previewReplacement(holders, { memberId: "sara", name: "Sara" }, 4, 1000, 12)).toEqual([
+      { name: "Ali", amount: 3000 },
+      { name: "Sara", amount: 9000 },
+    ]);
+  });
+
+  it("works when the slot has already changed hands once", () => {
+    const holders = [
+      { memberId: "ali", name: "Ali", fromPeriod: 1, toPeriod: 2 },
+      { memberId: "sara", name: "Sara", fromPeriod: 3, toPeriod: null },
+    ];
+    expect(previewReplacement(holders, { memberId: "bilal", name: "Bilal" }, 7, 1000, 12)).toEqual([
+      { name: "Ali", amount: 2000 },
+      { name: "Sara", amount: 4000 },
+      { name: "Bilal", amount: 6000 },
+    ]);
   });
 });

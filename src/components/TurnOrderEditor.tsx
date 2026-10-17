@@ -8,7 +8,7 @@ import { ErrorNote } from "./states";
 
 const initial: TurnState = { error: null, done: 0 };
 
-export type EditorTurn = { id: string; label: string };
+export type EditorTurn = { id: string; label: string; note?: string };
 
 type Props = {
   committeeId: string;
@@ -49,6 +49,11 @@ export function TurnOrderEditor({ committeeId, locked, movable }: Props) {
                 {t.label}
               </span>
               <span className="s">Already paid out, so it stays here</span>
+              {t.note ? (
+                <span className="s" dir="auto">
+                  {t.note}
+                </span>
+              ) : null}
             </span>
             <span className="lockmark" title="Paid out">
               <Icon name="lock" />
@@ -68,6 +73,11 @@ export function TurnOrderEditor({ committeeId, locked, movable }: Props) {
                 <span className="t" dir="auto">
                   {t.label}
                 </span>
+                {t.note ? (
+                  <span className="s" dir="auto">
+                    {t.note}
+                  </span>
+                ) : null}
               </span>
               <span className="movers" role="group" aria-label={`Move ${t.label}`}>
                 <button type="button" className="btn secondary small" aria-label={`Move ${t.label} earlier`} disabled={i === 0 || pending} onClick={() => setIds(moveBy(ids, i, -1))}>

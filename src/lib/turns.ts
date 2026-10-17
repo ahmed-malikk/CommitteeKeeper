@@ -1,7 +1,8 @@
 // Helpers for the Turns page: who holds a slot, which turns may still move, and moving one place up or down.
 // Pure functions: no database, no screen.
+import { splitPot } from "./ledger";
 
-export type HolderStretch = { name: string; fromPeriod: number; toPeriod: number | null };
+export type HolderStretch = { memberId: string; name: string; fromPeriod: number; toPeriod: number | null };
 
 export type Turn = {
   id: string;
@@ -11,14 +12,16 @@ export type Turn = {
   label: string;
 };
 
-/** "Ali" for a slot with one holder; "Ali (periods 1 to 3), Sara (4 to 12)" once a replacement took over. */
+/** "Ali" for a slot with one holder; "Ali (periods 1 to 3), Sara (4 to 12)" once a replacement took over ("period 1" for a single period). */
 export function holderLabel(holders: HolderStretch[], periods: number): string {
   if (holders.length === 0) return "No holder yet";
   if (holders.length === 1) return holders[0].name;
   return holders
     .map((h, i) => {
-      const range = `${h.fromPeriod} to ${h.toPeriod ?? periods}`;
-      return `${h.name} (${i === 0 ? "periods " : ""}${range})`;
+      const last = h.toPeriod ?? periods;
+      const range = last === h.fromPeriod ? `${h.fromPeriod}` : `${h.fromPeriod} to ${last}`;
+      const word = i === 0 ? (last === h.fromPeriod ? "period " : "periods ") : "";
+      return `${h.name} (${word}${range})`;
     })
     .join(", ");
 }
@@ -96,4 +99,33 @@ export function describeSwap(e: SwapEvent, labelOf: (slotId: string) => string):
     reason,
     date: e.happenedOn,
   };
+}
+
+// ── Leavers and the split pot ────────────────────────────────────────────────
+
+export type PotShare = { name: string; amount: number };
+
+/** Who gets what when this slot's pot is paid out. Null when one person held the slot all along (nothing to split). */
+export function potSplit(holders: HolderStretch[], amount: number, periods: number): PotShare[] | null {
+  if (holders.length < 2) return null;
+  try {
+    const shares = splitPot(amount, periods, holders.map((h) => ({ memberId: h.memberId, fromPeriod: h.fromPeriod, toPeriod: h.toPeriod })));
+    const names = new Map(holders.map((h) => [h.memberId, h.name]));
+    return shares.map((s) => ({ name: names.get(s.memberId) ?? "Unknown", amount: s.amount }));
+  } catch {
+    return null; // the stretches do not add up; show nothing rather than a wrong figure
+  }
+}
+
+/** The split there would be if `replacement` took the slot over from `fromPeriod`. The current holder's stretch ends the period before. */
+export function previewReplacement(
+  holders: HolderStretch[],
+  replacement: { memberId: string; name: string },
+  fromPeriod: number,
+  amount: number,
+  periods: number,
+): PotShare[] | null {
+  if (holders.length === 0) return null;
+  const ended = holders.map((h, i) => (i === holders.length - 1 ? { ...h, toPeriod: fromPeriod - 1 } : h));
+  return potSplit([...ended, { ...replacement, fromPeriod, toPeriod: null }], amount, periods);
 }

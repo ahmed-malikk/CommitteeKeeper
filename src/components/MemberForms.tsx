@@ -85,6 +85,8 @@ type RowProps = {
   committeeId: string;
   member: { id: string; name: string; email: string | null; phone: string | null };
   slots: number;
+  /** Stretches of a slot this member covered that someone else has taken over since. */
+  earlier: number;
   duesText: string;
   canChangeSlots: boolean;
   canRemove: boolean;
@@ -92,7 +94,7 @@ type RowProps = {
 };
 
 /** One member: their slots, contact details (organiser only), and the things the organiser can do. */
-export function MemberRow({ committeeId, member, slots, duesText, canChangeSlots, canRemove, roomLeft }: RowProps) {
+export function MemberRow({ committeeId, member, slots, earlier, duesText, canChangeSlots, canRemove, roomLeft }: RowProps) {
   const [editState, edit, editing] = useActionState(editMember, initial);
   const [slotState, plus, plusPending] = useActionState(addSlot, initial);
   const [minusState, minus, minusPending] = useActionState(removeSlot, initial);
@@ -118,7 +120,7 @@ export function MemberRow({ committeeId, member, slots, duesText, canChangeSlots
             {member.name}
           </span>
           <span className="s">
-            {slots === 0 ? "No slot yet" : `${slots} slot${slots === 1 ? "" : "s"} · ${duesText}`}
+            {slots === 0 ? (earlier > 0 ? "No slot now · covered earlier periods of a slot" : "No slot yet") : `${slots} slot${slots === 1 ? "" : "s"} · ${duesText}${earlier > 0 ? " · covered earlier periods of another slot" : ""}`}
           </span>
           {member.email || member.phone ? (
             <span className="s contact" dir="auto">

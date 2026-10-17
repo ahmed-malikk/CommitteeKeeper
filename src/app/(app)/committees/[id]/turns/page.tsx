@@ -9,7 +9,8 @@ import { ErrorNote } from "@/components/states";
 import { ORDER_LABELS, type OrderMethod } from "@/lib/agreement";
 import { formatDate } from "@/lib/dates";
 import { getCommittee, getDrawHistory, getSwapHistory, getTurns } from "@/lib/dal";
-import { describeDraw, describeSwap, inPlayOrder } from "@/lib/turns";
+import { formatRupees } from "@/lib/money";
+import { describeDraw, describeSwap, inPlayOrder, potSplit } from "@/lib/turns";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -48,6 +49,12 @@ export default async function TurnsPage({
   const undrawn = ordered.filter((t) => t.position === null).length;
   const lastPlaced = [...ordered].reverse().find((t) => t.position !== null);
   const labelOf = new Map(ordered.map((t) => [t.id, t.label]));
+  // A slot that changed hands shows how its pot will be split (rules L2, L3).
+  const money = (n: number) => formatRupees(n, { style: c.display_style, grouping: c.display_grouping });
+  const splitNote = (holders: Parameters<typeof potSplit>[0]) => {
+    const shares = potSplit(holders, c.amount, c.periods);
+    return shares ? `Pot split: ${shares.map((s) => `${s.name} ${money(s.amount)}`).join(" · ")}` : undefined;
+  };
   const lines = (history ?? []).map((e) => describeDraw(e, (slotId) => labelOf.get(slotId) ?? "a turn")).reverse();
   const swaps = (swapHistory ?? []).map((e) => describeSwap(e, (slotId) => labelOf.get(slotId) ?? "a turn")).reverse();
   // Turns that can swap: they have a place and are not paid out.
@@ -79,8 +86,8 @@ export default async function TurnsPage({
               ) : method === "hand" && open ? (
                 <TurnOrderEditor
                   committeeId={id}
-                  locked={locked.map((t) => ({ id: t.id, label: t.label }))}
-                  movable={movable.map((t) => ({ id: t.id, label: t.label }))}
+                  locked={locked.map((t) => ({ id: t.id, label: t.label, note: splitNote(t.holders) }))}
+                  movable={movable.map((t) => ({ id: t.id, label: t.label, note: splitNote(t.holders) }))}
                 />
               ) : (
                 <ol className="list turns">
@@ -92,6 +99,11 @@ export default async function TurnsPage({
                           {t.label}
                         </span>
                         {t.position === null ? <span className="s">No place yet</span> : t.paidOut ? <span className="s">Paid out</span> : null}
+                        {splitNote(t.holders) ? (
+                          <span className="s" dir="auto">
+                            {splitNote(t.holders)}
+                          </span>
+                        ) : null}
                       </span>
                       {t.paidOut ? (
                         <span className="lockmark">
