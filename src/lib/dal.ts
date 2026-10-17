@@ -3,7 +3,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SIGN_IN_PATH } from "@/lib/access";
-import { holderLabel, type DrawEvent, type HolderStretch, type Turn } from "@/lib/turns";
+import { holderLabel, type DrawEvent, type HolderStretch, type SwapEvent, type Turn } from "@/lib/turns";
 
 export type Organiser = { id: string; email: string };
 
@@ -102,4 +102,17 @@ export const getDrawHistory = cache(async (committeeId: string): Promise<DrawEve
     .order("seq");
   if (error) return null;
   return (data ?? []).map((e) => ({ seq: e.seq, type: e.type, happenedOn: e.happened_on, payload: (e.payload ?? {}) as DrawEvent["payload"] }));
+});
+
+/** The swaps in the committee's history, oldest first. Null when the database could not be reached. */
+export const getSwapHistory = cache(async (committeeId: string): Promise<SwapEvent[] | null> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("ledger_events")
+    .select("seq, happened_on, payload")
+    .eq("committee_id", committeeId)
+    .eq("type", "turn_swapped")
+    .order("seq");
+  if (error) return null;
+  return (data ?? []).map((e) => ({ seq: e.seq, happenedOn: e.happened_on, payload: (e.payload ?? {}) as SwapEvent["payload"] }));
 });

@@ -66,3 +66,18 @@ export async function committeeWithMembers(page: Page, o: { order: string; names
   await addMembers(page, url, o.names);
   return url;
 }
+
+/**
+ * A running committee whose order was set by hand: the first name is moved one place later, so the turns run
+ * names[1], names[0], names[2], ... Returns the address and that order.
+ */
+export async function runningByHand(page: Page, names: string[]) {
+  const url = await createCommittee(page, { periods: names.length, order: "Set the order by hand", startDate: "2026-01-15" });
+  await addMembers(page, url, names);
+  await page.goto(`${url}/turns`);
+  await page.getByRole("button", { name: `Move ${names[0]} later` }).click();
+  await page.getByRole("button", { name: "Save order" }).click();
+  await expect(page.getByText("Order saved.")).toBeVisible();
+  await startCommitteeOnPage(page, url);
+  return { url, order: [names[1], names[0], ...names.slice(2)] };
+}

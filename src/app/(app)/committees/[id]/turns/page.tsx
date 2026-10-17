@@ -3,12 +3,13 @@ import { CommitteeHeader } from "@/components/CommitteeHeader";
 import { PageTransition } from "@/components/PageTransition";
 import { TurnOrderEditor } from "@/components/TurnOrderEditor";
 import { DrawPanel, MethodChanger } from "@/components/DrawPanel";
+import { SwapPanel } from "@/components/SwapPanel";
 import { Icon } from "@/components/Icon";
 import { ErrorNote } from "@/components/states";
 import { ORDER_LABELS, type OrderMethod } from "@/lib/agreement";
 import { formatDate } from "@/lib/dates";
-import { getCommittee, getDrawHistory, getTurns } from "@/lib/dal";
-import { describeDraw, inPlayOrder } from "@/lib/turns";
+import { getCommittee, getDrawHistory, getSwapHistory, getTurns } from "@/lib/dal";
+import { describeDraw, describeSwap, inPlayOrder } from "@/lib/turns";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -21,6 +22,7 @@ const SAVED: Record<string, string> = {
   drawn: "Drawn. The result is in the history below.",
   redrawn: "Redone. The earlier result stays in the history below.",
   method: "Saved. The way of deciding turns has changed.",
+  swapped: "Swapped. The change is in the history below.",
 };
 
 export default async function TurnsPage({
@@ -34,7 +36,7 @@ export default async function TurnsPage({
   const { saved } = await searchParams;
   const c = await getCommittee(id);
   if (!c) notFound();
-  const [turns, history] = await Promise.all([getTurns(id, c.periods), getDrawHistory(id)]);
+  const [turns, history, swapHistory] = await Promise.all([getTurns(id, c.periods), getDrawHistory(id), getSwapHistory(id)]);
 
   const method = c.order_method as OrderMethod;
   const status = c.status as "forming" | "running" | "completed";
@@ -47,6 +49,9 @@ export default async function TurnsPage({
   const lastPlaced = [...ordered].reverse().find((t) => t.position !== null);
   const labelOf = new Map(ordered.map((t) => [t.id, t.label]));
   const lines = (history ?? []).map((e) => describeDraw(e, (slotId) => labelOf.get(slotId) ?? "a turn")).reverse();
+  const swaps = (swapHistory ?? []).map((e) => describeSwap(e, (slotId) => labelOf.get(slotId) ?? "a turn")).reverse();
+  // Turns that can swap: they have a place and are not paid out.
+  const swappable = movable.filter((t) => t.position !== null).map((t) => ({ id: t.id, place: t.position as number, label: t.label }));
 
   return (
     <PageTransition>
@@ -111,7 +116,32 @@ export default async function TurnsPage({
                   canRedoLast={lastPlaced !== undefined && !lastPlaced.paidOut}
                 />
               ) : null}
+              {status === "running" && swappable.length >= 2 ? <SwapPanel committeeId={id} choices={swappable} /> : null}
               {open ? <MethodChanger committeeId={id} method={method} status={status} /> : null}
+
+              {swaps.length > 0 ? (
+                <section aria-labelledby="swaps-h">
+                  <h2 id="swaps-h">Swap history</h2>
+                  <ol className="list drawlog">
+                    {swaps.map((l) => (
+                      <li key={l.seq} className="li">
+                        <span className="grow">
+                          <span className="t">Turns swapped</span>
+                          <span className="s" dir="auto">
+                            {l.detail}
+                          </span>
+                          {l.reason ? (
+                            <span className="s" dir="auto">
+                              Reason: {l.reason}
+                            </span>
+                          ) : null}
+                          <span className="s">{formatDate(l.date)}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              ) : null}
 
               {lines.length > 0 ? (
                 <section aria-labelledby="draws-h">

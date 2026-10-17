@@ -74,3 +74,26 @@ export function describeDraw(e: DrawEvent, labelOf: (slotId: string) => string):
     date: e.happenedOn,
   };
 }
+
+// ── Swaps ────────────────────────────────────────────────────────────────────
+
+export type SwapEvent = {
+  seq: number;
+  happenedOn: string;
+  payload: { slot_a?: unknown; from_a?: unknown; to_a?: unknown; slot_b?: unknown; from_b?: unknown; to_b?: unknown; reason?: unknown };
+};
+
+export type SwapLine = { seq: number; detail: string; reason: string | null; date: string };
+
+/** One swap in plain words: both turns, where each one was and where it is now. */
+export function describeSwap(e: SwapEvent, labelOf: (slotId: string) => string): SwapLine {
+  const name = (slot: unknown) => (typeof slot === "string" ? labelOf(slot) : "a turn");
+  const place = (n: unknown) => (typeof n === "number" ? String(n) : "?");
+  const reason = typeof e.payload.reason === "string" && e.payload.reason.trim() !== "" ? e.payload.reason : null;
+  return {
+    seq: e.seq,
+    detail: `${name(e.payload.slot_a)}: turn ${place(e.payload.from_a)} to ${place(e.payload.to_a)}. ${name(e.payload.slot_b)}: turn ${place(e.payload.from_b)} to ${place(e.payload.to_b)}.`,
+    reason,
+    date: e.happenedOn,
+  };
+}

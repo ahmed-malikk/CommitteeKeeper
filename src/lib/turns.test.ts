@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describeDraw, holderLabel, inPlayOrder, moveBy, sameList } from "./turns";
+import { describeDraw, describeSwap, holderLabel, inPlayOrder, moveBy, sameList } from "./turns";
 
 describe("holderLabel", () => {
   it("is just the name for a slot with one holder", () => {
@@ -71,5 +71,25 @@ describe("describeDraw", () => {
   it("describes a redone month-by-month draw", () => {
     const line = describeDraw({ seq: 7, type: "draw_redone", happenedOn: "2026-03-05", payload: { slot_id: "a", position: 2, reason: "  " } }, labelOf);
     expect(line).toMatchObject({ title: "Last draw redone", detail: "Turn 2: Ali", reason: null });
+  });
+});
+
+describe("describeSwap", () => {
+  const labelOf = (id: string) => ({ a: "Ali", b: "Sara" })[id as "a" | "b"] ?? "?";
+
+  it("names both turns with their old and new places", () => {
+    const line = describeSwap(
+      { seq: 9, happenedOn: "2026-04-02", payload: { slot_a: "a", from_a: 1, to_a: 3, slot_b: "b", from_b: 3, to_b: 1, reason: "Sara needs the money first" } },
+      labelOf,
+    );
+    expect(line.detail).toBe("Ali: turn 1 to 3. Sara: turn 3 to 1.");
+    expect(line.reason).toBe("Sara needs the money first");
+    expect(line.date).toBe("2026-04-02");
+  });
+
+  it("survives a payload with missing parts", () => {
+    const line = describeSwap({ seq: 1, happenedOn: "2026-04-02", payload: {} }, labelOf);
+    expect(line.detail).toBe("a turn: turn ? to ?. a turn: turn ? to ?.");
+    expect(line.reason).toBeNull();
   });
 });

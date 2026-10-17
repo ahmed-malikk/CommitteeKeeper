@@ -107,3 +107,22 @@ export async function changeMethod(previous: TurnState, formData: FormData): Pro
   refresh(target.id);
   redirect(`/committees/${target.id}/turns?saved=method`);
 }
+
+/** Swaps the places of two turns that have not been paid out (rules S1 to S3). No money amount changes. A reason is required. */
+export async function swapTurns(previous: TurnState, formData: FormData): Promise<TurnState> {
+  const target = await open(formData);
+  if (!target) return fail("That committee was not found.", previous);
+  const a = text(formData, "slotA");
+  const b = text(formData, "slotB");
+  if (!isUuid(a) || !isUuid(b)) return fail("Choose the two turns to swap.", previous);
+  if (a === b) return fail("Choose two different turns.", previous);
+  const { reason, problem } = reasonOf(formData);
+  if (problem) return fail(problem, previous);
+  if (reason === null) return fail("Say why the turns are swapping. It is written to the history.", previous);
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("swap_turns", { p_committee_id: target.id, p_slot_a: a, p_slot_b: b, p_reason: reason });
+  if (error) return fail(explainDbError(error, "swap the turns"), previous);
+  refresh(target.id);
+  redirect(`/committees/${target.id}/turns?saved=swapped`);
+}
