@@ -3,6 +3,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SIGN_IN_PATH } from "@/lib/access";
+import { holderLabel, type HolderStretch, type Turn } from "@/lib/turns";
 
 export type Organiser = { id: string; email: string };
 
@@ -49,4 +50,43 @@ export const getSlotInfo = cache(async (committeeId: string) => {
   if (slots.error || holders.error) return null;
   const held = new Set((holders.data ?? []).map((h) => h.slot_id));
   return (slots.data ?? []).map((s) => ({ hasHolder: held.has(s.id), position: s.position as number | null, paidOut: s.paid_out as boolean }));
+});
+
+/**
+ * Every slot of a committee with who holds it (and for which periods), for the Turns page.
+ * Null when the database could not be reached, so the page can say so instead of showing an empty list.
+ */
+export const getTurns = cache(async (committeeId: string, periods: number): Promise<Turn[] | null> => {
+  const supabase = await createClient();
+  const [slots, holders] = await Promise.all([
+    supabase.from("slots").select("id, position, paid_out, created_at").eq("committee_id", committeeId).order("created_at"),
+    supabase
+      .from("slot_holders")
+      .select("slot_id, from_period, to_period, members(name), slots!inner(committee_id)")
+      .eq("slots.committee_id", committeeId)
+      .order("from_period"),
+  ]);
+  if (slots.error || holders.error) return null;
+
+  const bySlot = new Map<string, HolderStretch[]>();
+  for (const h of holders.data ?? []) {
+    const member = h.members as unknown as { name: string } | null;
+    const list = bySlot.get(h.slot_id) ?? [];
+    list.push({ name: member?.name ?? "Unknown", fromPeriod: h.from_period, toPeriod: h.to_period });
+    bySlot.set(h.slot_id, list);
+  }
+
+  // A member with two slots would show the same name twice, so later ones get "slot 2", "slot 3".
+  const seen = new Map<string, number>();
+  return (slots.data ?? []).map((s) => {
+    const stretches = bySlot.get(s.id) ?? [];
+    let label = holderLabel(stretches, periods);
+    const first = stretches[0]?.name;
+    if (first) {
+      const n = (seen.get(first) ?? 0) + 1;
+      seen.set(first, n);
+      if (n > 1) label = `${label} · slot ${n}`;
+    }
+    return { id: s.id, position: s.position as number | null, paidOut: s.paid_out as boolean, holders: stretches, label };
+  });
 });

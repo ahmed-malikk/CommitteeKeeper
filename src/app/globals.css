@@ -332,3 +332,16 @@ a.li:hover { background: var(--wash); }
 .problems li { margin-bottom: 2px; }
 .btn:disabled { opacity: .6; }
 @media print { .status { display: none; } }
+
+/* ── Turns (#8) ──────────────────────────────────────────────────────────── */
+.turns { list-style: none; padding: 0; margin: 0; }
+.turn .pos { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-variant-numeric: tabular-nums; background: var(--line2); color: var(--ink); }
+.turn.paid { background: var(--wash); }
+.turn.paid .pos { background: var(--paidbg); color: var(--tealink); }
+.turn .t { overflow-wrap: anywhere; }
+.lockmark { flex: none; color: var(--ink2); }
+.lockmark .ic { width: 18px; height: 18px; }
+.movers { display: flex; gap: 8px; flex: none; }
+.movers .btn { min-width: 44px; min-height: 44px; justify-content: center; padding-inline: 10px; }
+.movers .btn:disabled { opacity: .35; transform: none; box-shadow: none; }
+@media print { .movers { display: none !important; } }
