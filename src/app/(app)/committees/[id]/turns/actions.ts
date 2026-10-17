@@ -58,3 +58,52 @@ export async function saveOrder(previous: TurnState, formData: FormData): Promis
   // The page shows the "saved" note itself; a note kept in the form would be lost when the page refreshes.
   redirect(`/committees/${target.id}/turns?saved=order`);
 }
+
+/** "Draw all turns": the database picks the order with secure random bytes. Doing it again is a redo; the old result stays in the history. */
+export async function drawAll(previous: TurnState, formData: FormData): Promise<TurnState> {
+  const target = await open(formData);
+  if (!target) return fail("That committee was not found.", previous);
+  const { reason, problem } = reasonOf(formData);
+  if (problem) return fail(problem, previous);
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("draw_all", { p_committee_id: target.id, p_reason: reason });
+  if (error) return fail(explainDbError(error, "draw the turns"), previous);
+  refresh(target.id);
+  redirect(`/committees/${target.id}/turns?saved=${text(formData, "redo") === "1" ? "redrawn" : "drawn"}`);
+}
+
+/** Month-by-month draw: picks one turn from those without a place. With `redo`, throws away the last drawn turn first. */
+export async function drawNext(previous: TurnState, formData: FormData): Promise<TurnState> {
+  const target = await open(formData);
+  if (!target) return fail("That committee was not found.", previous);
+  const redo = text(formData, "redo") === "1";
+  const { reason, problem } = reasonOf(formData);
+  if (problem) return fail(problem, previous);
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("draw_next", { p_committee_id: target.id, p_redo: redo, p_reason: reason });
+  if (error) return fail(explainDbError(error, redo ? "redo the draw" : "draw the next turn"), previous);
+  refresh(target.id);
+  redirect(`/committees/${target.id}/turns?saved=${redo ? "redrawn" : "drawn"}`);
+}
+
+const METHODS = ["hand", "draw_start", "draw_monthly"];
+
+/** Changes how turns are decided (rule O3). Once the committee is running, the change needs a reason. */
+export async function changeMethod(previous: TurnState, formData: FormData): Promise<TurnState> {
+  const target = await open(formData);
+  if (!target) return fail("That committee was not found.", previous);
+  const method = text(formData, "method");
+  if (!METHODS.includes(method)) return fail("Choose one of the ways of deciding turns.", previous);
+  if (method === target.committee.order_method) return fail("That is already the way turns are decided.", previous);
+  const { reason, problem } = reasonOf(formData);
+  if (problem) return fail(problem, previous);
+  if (target.committee.status === "running" && reason === null) return fail("Say why the way of deciding turns is changing. It is written to the history.", previous);
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_order_method", { p_committee_id: target.id, p_method: method, p_reason: reason });
+  if (error) return fail(explainDbError(error, "change how turns are decided"), previous);
+  refresh(target.id);
+  redirect(`/committees/${target.id}/turns?saved=method`);
+}

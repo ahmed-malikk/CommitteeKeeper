@@ -34,7 +34,7 @@ test.describe("turn order by hand", () => {
     expect(await names(page)).toEqual(["Ali", "Sara", "مریم خان"]);
 
     await page.getByRole("button", { name: "Move Sara earlier" }).click();
-    await page.getByLabel("Reason (optional)").fill("Agreed at the meeting");
+    await page.getByRole("form", { name: "Arrange the turns" }).getByLabel("Reason (optional)").fill("Agreed at the meeting");
     await page.getByRole("button", { name: "Save order" }).click();
     await expect(page.getByText("Order saved.")).toBeVisible();
 

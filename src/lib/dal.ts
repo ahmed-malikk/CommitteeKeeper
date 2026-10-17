@@ -3,7 +3,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SIGN_IN_PATH } from "@/lib/access";
-import { holderLabel, type HolderStretch, type Turn } from "@/lib/turns";
+import { holderLabel, type DrawEvent, type HolderStretch, type Turn } from "@/lib/turns";
 
 export type Organiser = { id: string; email: string };
 
@@ -89,4 +89,17 @@ export const getTurns = cache(async (committeeId: string, periods: number): Prom
     }
     return { id: s.id, position: s.position as number | null, paidOut: s.paid_out as boolean, holders: stretches, label };
   });
+});
+
+/** The draw entries of the committee's history, oldest first. Null when the database could not be reached. */
+export const getDrawHistory = cache(async (committeeId: string): Promise<DrawEvent[] | null> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("ledger_events")
+    .select("seq, type, happened_on, payload")
+    .eq("committee_id", committeeId)
+    .in("type", ["draw_done", "draw_redone"])
+    .order("seq");
+  if (error) return null;
+  return (data ?? []).map((e) => ({ seq: e.seq, type: e.type, happenedOn: e.happened_on, payload: (e.payload ?? {}) as DrawEvent["payload"] }));
 });

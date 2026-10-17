@@ -51,3 +51,18 @@ export async function addMembers(page: Page, committeeUrl: string, names: string
   await page.goto(`${committeeUrl}/members`);
   for (const name of names) await addMemberWithSlot(page, name);
 }
+
+/** On the Agreement page of a committee that is ready: starts it and waits until it is running. */
+export async function startCommitteeOnPage(page: Page, committeeUrl: string) {
+  await page.goto(committeeUrl);
+  await page.getByRole("button", { name: "Start committee" }).click();
+  await page.getByRole("button", { name: "Yes, start it" }).click();
+  await expect(page.getByText("This committee is running.")).toBeVisible({ timeout: 15_000 });
+}
+
+/** A committee with one member per name (one slot each) and a start date in the past, so it can start as already running. */
+export async function committeeWithMembers(page: Page, o: { order: string; names: string[] }) {
+  const url = await createCommittee(page, { periods: o.names.length, order: o.order, startDate: "2026-01-15" });
+  await addMembers(page, url, o.names);
+  return url;
+}

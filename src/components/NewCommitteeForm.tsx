@@ -6,6 +6,7 @@ import { createCommittee, type CreateState } from "@/app/(app)/committees/action
 import {
   DEFAULT_INPUT,
   NAME_MAX,
+  ORDER_HELP,
   ORDER_LABELS,
   firstStepWithProblem,
   problemsForStep,
@@ -20,11 +21,6 @@ import { formatRupees, type DisplayGrouping, type DisplayStyle } from "@/lib/mon
 import { ErrorNote } from "./states";
 
 const STEPS = ["Basics", "Turn order", "Rules and visibility"];
-const ORDER_HELP: Record<OrderMethod, string> = {
-  draw_start: "One random draw sets every turn. You can redo it before anything is paid out, and change a future turn by hand later.",
-  draw_monthly: "Each month a draw picks who gets that month's pot. Past draws are kept on the record.",
-  hand: "You choose who gets which month, and can change future turns later.",
-};
 const initial: CreateState = { error: null, problems: {} };
 
 /**

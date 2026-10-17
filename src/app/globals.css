@@ -345,3 +345,8 @@ a.li:hover { background: var(--wash); }
 .movers .btn { min-width: 44px; min-height: 44px; justify-content: center; padding-inline: 10px; }
 .movers .btn:disabled { opacity: .35; transform: none; box-shadow: none; }
 @media print { .movers { display: none !important; } }
+
+/* ── Draws (#9) ──────────────────────────────────────────────────────────── */
+.drawlog { list-style: none; padding: 0; margin: 0; }
+.card-form h3 { font-size: 1.0625rem; margin: 0 0 6px; }
+.methodchange > summary { margin-left: 0; }

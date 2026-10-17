@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { holderLabel, inPlayOrder, moveBy, sameList } from "./turns";
+import { describeDraw, holderLabel, inPlayOrder, moveBy, sameList } from "./turns";
 
 describe("holderLabel", () => {
   it("is just the name for a slot with one holder", () => {
@@ -46,5 +46,30 @@ describe("sameList", () => {
     expect(sameList(["a", "b"], ["a", "b"])).toBe(true);
     expect(sameList(["a", "b"], ["b", "a"])).toBe(false);
     expect(sameList(["a"], ["a", "b"])).toBe(false);
+  });
+});
+
+describe("describeDraw", () => {
+  const labelOf = (id: string) => ({ a: "Ali", b: "Sara", c: "Hira" })[id as "a" | "b" | "c"] ?? "?";
+
+  it("lists a start draw in the order drawn", () => {
+    const line = describeDraw({ seq: 4, type: "draw_done", happenedOn: "2026-03-01", payload: { order: ["b", "c", "a"], reason: null } }, labelOf);
+    expect(line).toEqual({ seq: 4, title: "Draw", detail: "Sara → Hira → Ali", reason: null, date: "2026-03-01" });
+  });
+
+  it("calls a second start draw a redo and keeps the reason", () => {
+    const line = describeDraw({ seq: 5, type: "draw_redone", happenedOn: "2026-03-02", payload: { order: ["a", "b"], reason: "Hira was absent" } }, labelOf);
+    expect(line.title).toBe("Draw redone");
+    expect(line.reason).toBe("Hira was absent");
+  });
+
+  it("describes a month-by-month draw with its place", () => {
+    const line = describeDraw({ seq: 6, type: "draw_done", happenedOn: "2026-03-05", payload: { slot_id: "c", position: 2 } }, labelOf);
+    expect(line).toMatchObject({ title: "Next turn drawn", detail: "Turn 2: Hira" });
+  });
+
+  it("describes a redone month-by-month draw", () => {
+    const line = describeDraw({ seq: 7, type: "draw_redone", happenedOn: "2026-03-05", payload: { slot_id: "a", position: 2, reason: "  " } }, labelOf);
+    expect(line).toMatchObject({ title: "Last draw redone", detail: "Turn 2: Ali", reason: null });
   });
 });

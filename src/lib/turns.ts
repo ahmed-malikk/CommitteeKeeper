@@ -42,3 +42,35 @@ export function moveBy(ids: string[], index: number, step: -1 | 1): string[] {
 export function sameList(a: string[], b: string[]): boolean {
   return a.length === b.length && a.every((v, i) => v === b[i]);
 }
+
+// ── Reading the draw history ─────────────────────────────────────────────────
+
+export type DrawEvent = {
+  seq: number;
+  type: string; // "draw_done" or "draw_redone"
+  happenedOn: string;
+  payload: { order?: unknown; slot_id?: unknown; position?: unknown; reason?: unknown };
+};
+
+export type DrawLine = { seq: number; title: string; detail: string; reason: string | null; date: string };
+
+/** One history entry about a draw, in plain words. `labelOf` turns a slot id into who holds it. */
+export function describeDraw(e: DrawEvent, labelOf: (slotId: string) => string): DrawLine {
+  const redone = e.type === "draw_redone";
+  const reason = typeof e.payload.reason === "string" && e.payload.reason.trim() !== "" ? e.payload.reason : null;
+  const order = Array.isArray(e.payload.order) ? (e.payload.order as unknown[]).filter((x): x is string => typeof x === "string") : null;
+
+  if (order) {
+    return { seq: e.seq, title: redone ? "Draw redone" : "Draw", detail: order.map(labelOf).join(" → "), reason, date: e.happenedOn };
+  }
+  const slotId = typeof e.payload.slot_id === "string" ? e.payload.slot_id : "";
+  const place = typeof e.payload.position === "number" ? e.payload.position : null;
+  const who = slotId ? labelOf(slotId) : "a turn";
+  return {
+    seq: e.seq,
+    title: redone ? "Last draw redone" : "Next turn drawn",
+    detail: place === null ? who : `Turn ${place}: ${who}`,
+    reason,
+    date: e.happenedOn,
+  };
+}
