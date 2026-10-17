@@ -3,6 +3,8 @@ import { expect, type Page } from "@playwright/test";
 // One saved sign-in (made by auth.setup.ts) is reused by every test that needs a signed-in organiser,
 // so the suite does not sign in dozens of times (Supabase limits sign-ins per minute).
 export const ORGANISER_STATE = "playwright/.auth/organiser.json";
+// A brand-new account with no committees, for tests that look at the empty state.
+export const EMPTY_STATE = "playwright/.auth/empty-organiser.json";
 export const SIGNED_OUT = { cookies: [], origins: [] };
 
 export const login = {

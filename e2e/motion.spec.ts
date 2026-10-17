@@ -1,12 +1,14 @@
 import { expect, test } from "@playwright/test";
-import { ORGANISER_STATE } from "./helpers";
+import { EMPTY_STATE, ORGANISER_STATE } from "./helpers";
 
 test.use({ storageState: ORGANISER_STATE });
 
 const isPhone = () => test.info().project.name === "phone-375";
 
 test.describe("motion", () => {
-  test("words pop in and everything has settled visible a moment later", async ({ page }) => {
+  test.describe("on a new account (empty state)", () => {
+    test.use({ storageState: EMPTY_STATE });
+    test("words pop in and everything has settled visible a moment later", async ({ page }) => {
     await page.goto("/committees");
     const word = page.locator(".pw").first();
     await expect(word).toHaveCSS("animation-name", "pop");
@@ -14,6 +16,7 @@ test.describe("motion", () => {
     // the iris band has finished drawing across (no clip left) and the rosette rings are fully drawn
     await expect.poll(() => page.locator(".iris").evaluate((el) => getComputedStyle(el).clipPath), { timeout: 4000 }).toMatch(/^inset\((0(px|%)?\s?)+\)$/);
     await expect.poll(() => page.locator(".empty svg.big ellipse").first().evaluate((el) => getComputedStyle(el).strokeDashoffset), { timeout: 5000 }).toBe("0px");
+    });
   });
 
   test("the rail highlight sits on the active link and is set up to slide", async ({ page }) => {
@@ -40,7 +43,7 @@ test.describe("motion", () => {
 });
 
 test.describe("reduced motion", () => {
-  test.use({ reducedMotion: "reduce" });
+  test.use({ reducedMotion: "reduce", storageState: EMPTY_STATE });
 
   test("words fade instead of travelling, and loops are off", async ({ page }) => {
     await page.goto("/committees");

@@ -1,15 +1,19 @@
 import { expect, test } from "@playwright/test";
-import { ORGANISER_STATE } from "./helpers";
+import { EMPTY_STATE, ORGANISER_STATE } from "./helpers";
 
 // These pages need a signed-in organiser: reuse the saved sign-in.
 test.use({ storageState: ORGANISER_STATE });
 
 const isPhone = () => test.info().project.name === "phone-375";
 
-test("committees page shows the empty state inside the app shell", async ({ page }) => {
-  await page.goto("/committees");
-  await expect(page.getByRole("heading", { name: "My committees" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "No committees yet" })).toBeVisible();
+test.describe("on a new account", () => {
+  test.use({ storageState: EMPTY_STATE });
+  test("committees page shows the empty state inside the app shell", async ({ page }) => {
+    await page.goto("/committees");
+    await expect(page.getByRole("heading", { name: "My committees" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "No committees yet" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "New committee" })).toBeVisible();
+  });
 });
 
 test("laptop shows the side rail; phone shows the top bar instead", async ({ page }) => {
