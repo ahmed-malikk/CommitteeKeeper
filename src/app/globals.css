@@ -376,3 +376,24 @@ label.btn[aria-disabled="true"] { opacity: .6; pointer-events: none; }
 .pickfile { display: flex; flex-direction: column; gap: 6px; }
 .pickfile ul { margin: 0; padding-left: 18px; font-size: .875rem; color: var(--ink2); }
 @media print { .receipts { display: none !important; } }
+
+/* ── Late list and payment grid (#16) ─────────────────────────────────────── */
+.latebox, .gridbox { margin: 0 0 28px; }
+.latebox h2 .mut, .gridbox h2 .mut { font-weight: 500; margin-left: 8px; }
+.gridwrap { overflow-x: auto; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); }
+.gridwrap:focus-visible { outline: 2px solid var(--peri); outline-offset: 2px; }
+.paygrid { border-collapse: separate; border-spacing: 0; width: 100%; font-size: .875rem; }
+.paygrid th, .paygrid td { padding: 8px 10px; border-bottom: 1px solid var(--line2); text-align: center; white-space: nowrap; }
+.paygrid tbody tr:last-child > * { border-bottom: 0; }
+.paygrid thead th { background: var(--wash); font-weight: 600; }
+.paygrid thead th a { color: var(--ink); text-decoration: none; }
+.paygrid thead th[aria-current="true"] { box-shadow: inset 0 -3px 0 var(--teal); }
+.paygrid th[scope="row"], .paygrid thead th:first-child { position: sticky; left: 0; z-index: 1; background: var(--paper); text-align: start; max-width: 9rem; overflow: hidden; text-overflow: ellipsis; border-inline-end: 1px solid var(--line2); }
+.paygrid thead th:first-child { background: var(--wash); }
+.paygrid td a { display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 36px; border-radius: 8px; text-decoration: none; color: var(--ink2); font-weight: 600; }
+.paygrid td a svg { width: 18px; height: 18px; }
+.paygrid .g-paid a { background: var(--paidbg); color: var(--tealink); }
+.paygrid .g-late a { background: var(--latebg); color: var(--late); }
+.paygrid td a:hover { outline: 1px solid var(--line); }
+@media print { .gridwrap { overflow: visible; } }
+

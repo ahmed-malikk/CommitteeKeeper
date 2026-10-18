@@ -9,8 +9,8 @@ import { EmptyState, ErrorNote } from "@/components/states";
 import { getCommittee, getPayments, getReceipts, getTurns, isUuid } from "@/lib/dal";
 import { formatDate, todayInPakistan } from "@/lib/dates";
 import { formatRupees } from "@/lib/money";
-import { METHOD_LABELS, cellOf, currentPeriod, lateText, periodLabel, type Method, type PaidRecord } from "@/lib/payments";
-import { inPlayOrder } from "@/lib/turns";
+import { METHOD_LABELS, cellOf, currentPeriod, lateText, periodLabel, summarise, type Cell, type Method, type PaidRecord } from "@/lib/payments";
+import { holderAt, inPlayOrder } from "@/lib/turns";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -66,7 +66,7 @@ export default async function PaymentsPage({
     payments.map((p) => [`${p.slotId}|${p.period}`, { slotId: p.slotId, period: p.period, paidOn: p.paidOn, method: p.method, paymentId: p.id }]),
   );
   const rows = ordered.map((t) => {
-    const holder = t.holders.find((h) => h.fromPeriod <= period && (h.toPeriod === null || h.toPeriod >= period));
+    const holder = holderAt(t.holders, period);
     const record = byKey.get(`${t.id}|${period}`);
     return { slot: t, who: holder?.name ?? t.label, cell: cellOf(terms, today, t.id, period, record), method: record?.method, paymentId: record?.paymentId };
   });
@@ -77,6 +77,15 @@ export default async function PaymentsPage({
   const firstUnpaid = rows.find((r) => r.cell.state !== "paid");
   const wantedSlot = isUuid(query.slot ?? "") && ordered.some((t) => t.id === query.slot) ? (query.slot as string) : (firstUnpaid?.slot.id ?? "");
   const periods = Array.from({ length: c.periods }, (_, i) => ({ period: i + 1, label: periodLabel(c.start_date, i + 1) }));
+
+  // The late list and the grid count through the same function as the home screen, so the numbers agree everywhere.
+  const summary = summarise(terms, today, ordered.map((t) => t.id), payments);
+  const slotName = new Map(ordered.map((t) => [t.id, t]));
+  const whoAt = (slotId: string, p: number) => {
+    const t = slotName.get(slotId);
+    return (t && holderAt(t.holders, p)?.name) || t?.label || "";
+  };
+  const lateHref = (cell: Cell) => `/committees/${id}/payments?period=${cell.period}&slot=${cell.slotId}#record`;
   const href = (p: number) => `/committees/${id}/payments?period=${p}`;
 
   return (
@@ -116,6 +125,39 @@ export default async function PaymentsPage({
           paid &middot; {money(collected)} collected. Due {formatDate(rows[0]?.cell.due ?? today)}
           {c.grace_days > 0 ? `, ${c.grace_days} grace day${c.grace_days === 1 ? "" : "s"}` : ""}.
         </p>
+
+        <section aria-labelledby="late-h" className="latebox">
+          <h2 id="late-h">
+            Late <span className="mut sm">{summary.late.length === 0 ? "nobody" : `${summary.late.length} unpaid past the grace days`}</span>
+          </h2>
+          {summary.late.length === 0 ? (
+            <p className="mut">Nobody is late. Every instalment due so far is recorded.</p>
+          ) : (
+            <div className="list">
+              {summary.late.map((cell) => (
+                <div className="li" key={`${cell.slotId}|${cell.period}`}>
+                  <div className="grow">
+                    <span className="t" dir="auto">
+                      {whoAt(cell.slotId, cell.period)}
+                    </span>
+                    <span className="s">
+                      {periodLabel(c.start_date, cell.period)} &middot; due {formatDate(cell.due)}
+                    </span>
+                  </div>
+                  <span className="chip late">
+                    <Icon name="alert" />
+                    {lateText(cell.daysLate)}
+                  </span>
+                  {open ? (
+                    <Link className="btn secondary small" href={lateHref(cell)} aria-label={`Record a payment for ${whoAt(cell.slotId, cell.period)}, ${periodLabel(c.start_date, cell.period)}`}>
+                      Record
+                    </Link>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
         <div className="two">
           <section aria-labelledby="slots-h">
@@ -182,6 +224,43 @@ export default async function PaymentsPage({
             ) : null}
           </div>
         </div>
+
+        <section aria-labelledby="grid-h" className="gridbox">
+          <h2 id="grid-h">Every slot, every month</h2>
+          <div className="gridwrap" tabIndex={0} role="region" aria-label="Payment grid, scrolls sideways on a small screen">
+            <table className="paygrid">
+              <thead>
+                <tr>
+                  <th scope="col">Slot</th>
+                  {periods.map((p) => (
+                    <th scope="col" key={p.period} aria-current={p.period === period ? "true" : undefined}>
+                      <Link href={href(p.period)}>{p.label}</Link>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {ordered.map((t) => (
+                  <tr key={t.id}>
+                    <th scope="row" dir="auto">
+                      {holderAt(t.holders, period)?.name || t.label}
+                    </th>
+                    {periods.map((p) => {
+                      const cell = cellOf(terms, today, t.id, p.period, byKey.get(`${t.id}|${p.period}`));
+                      return (
+                        <td key={p.period} className={`g-${cell.state}`}>
+                          <Link href={href(p.period)} aria-label={`${whoAt(t.id, p.period)}, ${p.label}: ${cell.state === "paid" ? "paid" : cell.state === "late" ? lateText(cell.daysLate) : cell.state === "due" ? "due" : "not due yet"}`}>
+                            {cell.state === "paid" ? <Icon name="check" /> : cell.state === "late" ? <Icon name="alert" /> : cell.state === "due" ? "due" : "–"}
+                          </Link>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
       </div>
     </PageTransition>
   );

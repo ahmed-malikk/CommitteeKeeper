@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describeDraw, describeSwap, holderLabel, inPlayOrder, moveBy, potSplit, previewReplacement, sameList } from "./turns";
+import { describeDraw, describeSwap, holderAt, holderLabel, inPlayOrder, moveBy, potSplit, previewReplacement, sameList } from "./turns";
 
 describe("holderLabel", () => {
   it("is just the name for a slot with one holder", () => {
@@ -143,3 +143,21 @@ describe("previewReplacement", () => {
     ]);
   });
 });
+
+describe("holderAt", () => {
+  const holders = [
+    { memberId: "ali", name: "Ali", fromPeriod: 1, toPeriod: 3 },
+    { memberId: "sara", name: "Sara", fromPeriod: 4, toPeriod: null },
+  ];
+  it("finds the holder whose stretch covers the period, at both ends of a stretch", () => {
+    expect(holderAt(holders, 1)?.name).toBe("Ali");
+    expect(holderAt(holders, 3)?.name).toBe("Ali");
+    expect(holderAt(holders, 4)?.name).toBe("Sara");
+    expect(holderAt(holders, 12)?.name).toBe("Sara");
+  });
+  it("is undefined when nobody holds the slot yet", () => {
+    expect(holderAt([], 1)).toBeUndefined();
+    expect(holderAt([{ memberId: "x", name: "X", fromPeriod: 5, toPeriod: null }], 2)).toBeUndefined();
+  });
+});
+

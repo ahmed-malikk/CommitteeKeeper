@@ -26,6 +26,11 @@ export function holderLabel(holders: HolderStretch[], periods: number): string {
     .join(", ");
 }
 
+/** Who held a slot in a given period: the stretch that covers it, or undefined when nobody did. */
+export function holderAt(holders: HolderStretch[], period: number): HolderStretch | undefined {
+  return holders.find((h) => h.fromPeriod <= period && (h.toPeriod === null || h.toPeriod >= period));
+}
+
 /** The turns in play order: those with a place by place, then the ones without a place yet, in the order they were made. */
 export function inPlayOrder<T extends { position: number | null }>(turns: T[]): T[] {
   const placed = turns.filter((t) => t.position !== null).sort((a, b) => (a.position as number) - (b.position as number));
