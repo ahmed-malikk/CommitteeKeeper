@@ -28,6 +28,16 @@ npm run test:e2e   # builds, then system tests (Playwright: desktop Edge, deskto
 
 Every push runs the type check, unit tests and build on GitHub Actions.
 
+## The history, and what its check proves
+
+Every change to a committee (a payment, a correction, a draw, a payout) is written to a history that cannot be edited or deleted: the database refuses `UPDATE` and `DELETE` on it for every role, including the organiser's own session, and a correction is a new entry that points to the original. Each entry stores a fingerprint (a SHA-256 hash) of its own contents plus the fingerprint of the entry before it, so the entries form a chain. The History page recomputes the whole chain every time it opens.
+
+**What the check proves:** that no entry was changed, removed, reordered or slipped in between existing ones after it was written, and it says which entry number is the first to break.
+
+**What it cannot prove:** that what was typed in the first place was true (a wrong amount recorded honestly is still recorded), or that nobody with direct access to the database itself rewrote the whole chain from the start. It makes quiet changes visible; it does not replace trust in the organiser.
+
+The History page also prints or saves as a PDF in the app's own design.
+
 ## Stack
 
 Next.js and TypeScript, Supabase (Postgres with row-level security) for data, Vercel for hosting.

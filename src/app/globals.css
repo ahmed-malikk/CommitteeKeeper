@@ -258,6 +258,7 @@ label.sw { cursor: pointer; }
 @media print {
   .print-only { display: block; }
   .crumb, .note.ok { display: none !important; }
+  .chain .note.ok { display: flex !important; }
   .agreement { break-inside: avoid; }
   .two { display: block; }
   .sw input[type=checkbox] { display: none; }
@@ -408,3 +409,17 @@ label.btn[aria-disabled="true"] { opacity: .6; pointer-events: none; }
 .check { display: flex; gap: 10px; align-items: flex-start; font-size: .9375rem; }
 .check input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--tealink); flex: none; }
 @media print { .fixopen, .fixform { display: none !important; } }
+
+/* ── History and chain check (#19) ────────────────────────────────────────── */
+.chain { margin: 0 0 18px; }
+.histbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin: 0 0 14px; }
+.hist { list-style: none; margin: 0; padding: 0; }
+.hist > li { display: flex; gap: 14px; padding: 14px 18px; border-bottom: 1px solid var(--line2); break-inside: avoid; }
+.hist > li:last-child { border: 0; }
+.hist .no { flex: none; min-width: 3ch; font-family: var(--num); font-weight: 600; color: var(--ink2); }
+.hist .body { flex: 1; min-width: 0; }
+.hist .t { font-weight: 600; display: block; }
+.hist .s { display: block; font-size: .875rem; color: var(--ink2); overflow-wrap: anywhere; }
+.hist .fix { color: var(--late); font-weight: 600; }
+.hist .fp { font-family: var(--num); }
+@media print { .chain { break-inside: avoid; } .hist > li { padding-inline: 0; } }

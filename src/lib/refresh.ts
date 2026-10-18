@@ -5,5 +5,6 @@ import { revalidatePath } from "next/cache";
 export function refreshPayments(committeeId: string) {
   revalidatePath(`/committees/${committeeId}`);
   revalidatePath(`/committees/${committeeId}/payments`);
+  revalidatePath(`/committees/${committeeId}/history`);
   revalidatePath("/committees");
 }

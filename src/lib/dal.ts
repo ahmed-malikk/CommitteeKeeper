@@ -3,6 +3,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SIGN_IN_PATH } from "@/lib/access";
+import type { HistoryEvent } from "@/lib/history";
 import type { PaidRecord } from "@/lib/payments";
 import { holderLabel, type DrawEvent, type HolderStretch, type SwapEvent, type Turn } from "@/lib/turns";
 
@@ -207,4 +208,31 @@ export const getReceipts = cache(async (committeeId: string): Promise<Map<string
   const byPayment = new Map<string, ReceiptRow[]>();
   for (const r of data ?? []) byPayment.set(r.payment_id, [...(byPayment.get(r.payment_id) ?? []), { id: r.id, paymentId: r.payment_id, slotNo: r.slot_no }]);
   return byPayment;
+});
+
+/**
+ * The whole history of a committee, oldest first, plus the names of its members (the entries only carry ids).
+ * Null when the database could not be reached, so the page can say so instead of showing an empty history.
+ */
+export const getHistory = cache(async (committeeId: string): Promise<{ events: HistoryEvent[]; members: Map<string, string> } | null> => {
+  const supabase = await createClient();
+  const [events, members] = await Promise.all([
+    supabase.from("ledger_events").select("id, seq, type, actor_id, happened_on, recorded_at, payload, corrects_event_id, hash").eq("committee_id", committeeId).order("seq"),
+    supabase.from("members").select("id, name").eq("committee_id", committeeId),
+  ]);
+  if (events.error || members.error) return null;
+  const seqOf = new Map((events.data ?? []).map((e) => [e.id, e.seq]));
+  return {
+    events: (events.data ?? []).map((e) => ({
+      seq: e.seq,
+      type: e.type,
+      happenedOn: e.happened_on,
+      recordedAt: e.recorded_at,
+      actorId: e.actor_id,
+      payload: (e.payload ?? {}) as Record<string, unknown>,
+      correctsSeq: e.corrects_event_id ? (seqOf.get(e.corrects_event_id) ?? null) : null,
+      hash: e.hash,
+    })),
+    members: new Map((members.data ?? []).map((m) => [m.id, m.name])),
+  };
 });
