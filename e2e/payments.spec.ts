@@ -23,7 +23,7 @@ test.describe("recording a payment (US-7)", () => {
 
     // The clock for the "under 20 seconds on a phone" criterion starts when the organiser taps Record.
     const started = Date.now();
-    await page.getByRole("link", { name: "Record a payment for Ali" }).click();
+    await page.getByRole("link", { name: "Record a payment for Ali", exact: true }).click();
     const form = page.getByRole("form", { name: "Record a payment" });
     await expect(form.getByLabel("Slot")).toHaveValue(/.+/);
     await expect(page).toHaveURL(/slot=/);
@@ -42,7 +42,7 @@ test.describe("recording a payment (US-7)", () => {
 
     await expect(page.getByText("1 of 2")).toBeVisible();
     await expect(page.getByText(/Paid .* Easypaisa/)).toBeVisible();
-    await expect(page.getByRole("link", { name: "Record a payment for Ali" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Record a payment for Ali", exact: true })).toHaveCount(0);
     // The private note is never shown on the list.
     await expect(page.getByText("TX 12345")).toHaveCount(0);
     expect(url).toContain("/committees/");
@@ -51,7 +51,7 @@ test.describe("recording a payment (US-7)", () => {
   test("a second payment for the same slot and month is refused with the reason (FR-7, TC-024)", async ({ page }) => {
     test.setTimeout(240_000);
     const url = await running(page);
-    await page.getByRole("link", { name: "Record a payment for Ali" }).click();
+    await page.getByRole("link", { name: "Record a payment for Ali", exact: true }).click();
     const form = page.getByRole("form", { name: "Record a payment" });
     await expect(form.locator("#pay-slot option:checked")).toHaveText("Ali");
     await form.getByRole("button", { name: "Save payment" }).click();
@@ -73,7 +73,7 @@ test.describe("recording a payment (US-7)", () => {
   test("a date in the future is refused, in the form and in the database (FR-7)", async ({ page }) => {
     test.setTimeout(240_000);
     const url = await running(page);
-    await page.getByRole("link", { name: "Record a payment for Ali" }).click();
+    await page.getByRole("link", { name: "Record a payment for Ali", exact: true }).click();
     const form = page.getByRole("form", { name: "Record a payment" });
     await expect(form.locator("#pay-slot option:checked")).toHaveText("Ali");
     await form.getByLabel("Date paid").fill(pakistanDay(1));
@@ -94,7 +94,7 @@ test.describe("recording a payment (US-7)", () => {
     await running(page);
     await page.getByRole("link", { name: "Earlier month, Jan 2026" }).click();
     await expect(page.getByRole("heading", { name: /Jan 2026/ })).toBeVisible();
-    await page.getByRole("link", { name: "Record a payment for مریم خان" }).click();
+    await page.getByRole("link", { name: "Record a payment for مریم خان", exact: true }).click();
     const form = page.getByRole("form", { name: "Record a payment" });
     await expect(form.locator("#pay-slot option:checked")).toHaveText("مریم خان");
     await form.getByLabel("Date paid").fill("2026-01-12");

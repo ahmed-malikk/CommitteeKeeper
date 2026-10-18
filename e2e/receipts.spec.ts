@@ -11,7 +11,7 @@ const TWO_MB = 2 * 1024 * 1024;
 async function withPayment(page: import("@playwright/test").Page, image?: { name: string; buffer: Buffer }) {
   const { url } = await runningByHand(page, ["Ali", "مریم خان"]);
   await page.goto(`${url}/payments`);
-  await page.getByRole("link", { name: "Record a payment for Ali" }).click();
+  await page.getByRole("link", { name: "Record a payment for Ali", exact: true }).click();
   const form = page.getByRole("form", { name: "Record a payment" });
   await expect(form.locator("#pay-slot option:checked")).toHaveText("Ali");
   if (image) await form.getByLabel(/Receipt screenshots/).setInputFiles({ name: image.name, mimeType: "image/png", buffer: image.buffer });
