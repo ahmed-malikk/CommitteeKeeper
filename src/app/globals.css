@@ -423,3 +423,12 @@ label.btn[aria-disabled="true"] { opacity: .6; pointer-events: none; }
 .hist .fix { color: var(--late); font-weight: 600; }
 .hist .fp { font-family: var(--num); }
 @media print { .chain { break-inside: avoid; } .hist > li { padding-inline: 0; } }
+
+/* ── Reminders (#20) ──────────────────────────────────────────────────────── */
+.remgroup { margin: 0 0 26px; }
+.remgroup h2 .mut { font-weight: 500; margin-left: 8px; }
+.li.rem { align-items: flex-start; flex-wrap: wrap; }
+.li.rem .msg { margin-top: 4px; font-style: normal; color: var(--ink2); }
+.li.rem .today { color: var(--tealink); }
+@media (max-width: 640px) { .li.rem .btn { flex: 1 1 auto; justify-content: center; } }
+@media print { .li.rem .btn { display: none !important; } }

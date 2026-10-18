@@ -19,7 +19,7 @@ type Summary = {
 };
 
 /** The top of every page inside one committee: back link, name, status, the key numbers, and the page switcher. */
-export function CommitteeHeader({ committee: c, active, children }: { committee: Summary; active: "agreement" | "payments" | "members" | "turns" | "history"; children?: ReactNode }) {
+export function CommitteeHeader({ committee: c, active, children }: { committee: Summary; active: "agreement" | "payments" | "members" | "turns" | "reminders" | "history"; children?: ReactNode }) {
   const status = c.status as keyof typeof STATUS_CLASS;
   const money = formatRupees(c.amount, { style: c.display_style, grouping: c.display_grouping });
   return (
@@ -56,6 +56,9 @@ export function CommitteeHeader({ committee: c, active, children }: { committee:
         </Link>
         <Link href={`/committees/${c.id}/turns`} aria-current={active === "turns" ? "page" : undefined}>
           Turns
+        </Link>
+        <Link href={`/committees/${c.id}/reminders`} aria-current={active === "reminders" ? "page" : undefined}>
+          Reminders
         </Link>
         <Link href={`/committees/${c.id}/history`} aria-current={active === "history" ? "page" : undefined}>
           History

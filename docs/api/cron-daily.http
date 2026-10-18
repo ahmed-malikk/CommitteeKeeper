@@ -1,0 +1,19 @@
+### Manual checks of the daily reminder job (VS Code "REST Client", or any tool that sends HTTP).
+### Replace the host with http://localhost:3000 or your own deployment; put your CRON_SECRET in the last two requests.
+
+@host = https://committeekeeper.vercel.app
+
+### 1. No secret: refused (401)
+GET {{host}}/api/cron/daily
+
+### 2. Wrong secret: refused (401)
+GET {{host}}/api/cron/daily
+Authorization: Bearer not-the-secret
+
+### 3. Right secret: runs (200 and a summary, or 503 if the server key is not set up yet)
+GET {{host}}/api/cron/daily
+Authorization: Bearer YOUR_CRON_SECRET
+
+### 4. Right secret again, the same day: nothing is sent or logged a second time (emailed: 0, logged: 0)
+GET {{host}}/api/cron/daily
+Authorization: Bearer YOUR_CRON_SECRET
