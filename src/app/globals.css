@@ -365,3 +365,14 @@ a.li:hover { background: var(--wash); }
   .subnav a { padding-inline: 12px; white-space: nowrap; }
 }
 @media print { .pager { display: none !important; } }
+
+/* ── Receipts (#15) ──────────────────────────────────────────────────────── */
+.receipts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 8px; }
+.rc { display: inline-flex; align-items: center; gap: 6px; font-size: .875rem; }
+.rc a { color: var(--tealink); font-weight: 600; }
+.rc-ask { display: inline-flex; gap: 4px; }
+label.btn[aria-disabled="true"] { opacity: .6; pointer-events: none; }
+.sr-only:focus-visible + label.btn { outline: 2px solid var(--peri); outline-offset: 2px; }
+.pickfile { display: flex; flex-direction: column; gap: 6px; }
+.pickfile ul { margin: 0; padding-left: 18px; font-size: .875rem; color: var(--ink2); }
+@media print { .receipts { display: none !important; } }

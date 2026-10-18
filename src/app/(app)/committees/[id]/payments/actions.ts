@@ -50,3 +50,26 @@ export async function recordPayment(previous: PayState, formData: FormData): Pro
   refreshPayments(id);
   return { error: null, problems: {}, paymentId: data as string, done: previous.done + 1 };
 }
+
+export type RemoveState = { error: string | null };
+
+/**
+ * Removes a receipt: the database marks it removed and writes the history entry (with the file's fingerprint),
+ * then the image file itself is deleted from the private bucket (rule P5). The history keeps the record.
+ */
+export async function removeReceipt(committeeId: string, receiptId: string): Promise<RemoveState> {
+  await requireUser();
+  if (!isUuid(committeeId) || !isUuid(receiptId)) return { error: "That receipt was not found." };
+  const c = await getCommittee(committeeId);
+  if (!c) return { error: "That committee was not found." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("remove_receipt", { p_committee_id: committeeId, p_receipt_id: receiptId });
+  if (error) return { error: explainDbError(error, "remove the receipt") };
+
+  const gone = await supabase.storage.from("receipts").remove([data as string]);
+  // The record says it is removed either way; a file that could not be deleted is logged for the cleanup job.
+  if (gone.error) console.error("receipt file not deleted:", data, gone.error.message);
+  refreshPayments(committeeId);
+  return { error: null };
+}

@@ -196,3 +196,15 @@ export const getPayments = cache(async (committeeId: string): Promise<PaymentRow
   if (error) return null;
   return (data ?? []).map((p) => ({ id: p.id, slotId: p.slot_id, memberId: p.member_id, period: p.period, paidOn: p.paid_on, method: p.method }));
 });
+
+export type ReceiptRow = { id: string; paymentId: string; slotNo: number };
+
+/** The receipts of a committee that are still attached (a removed one is left out), by payment. Null when the database could not be reached. */
+export const getReceipts = cache(async (committeeId: string): Promise<Map<string, ReceiptRow[]> | null> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("receipts").select("id, payment_id, slot_no").eq("committee_id", committeeId).is("removed_at", null).order("slot_no");
+  if (error) return null;
+  const byPayment = new Map<string, ReceiptRow[]>();
+  for (const r of data ?? []) byPayment.set(r.payment_id, [...(byPayment.get(r.payment_id) ?? []), { id: r.id, paymentId: r.payment_id, slotNo: r.slot_no }]);
+  return byPayment;
+});

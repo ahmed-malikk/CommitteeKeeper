@@ -1,8 +1,11 @@
 "use client";
 
-import { startTransition, useActionState, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { startTransition, useActionState, useEffect, useRef, useState, type FormEvent } from "react";
 import { recordPayment, type PayState } from "@/app/(app)/committees/[id]/payments/actions";
 import { METHODS, METHOD_LABELS, PAYMENT_NOTE_MAX } from "@/lib/payments";
+import { RECEIPTS_PER_PAYMENT } from "@/lib/receipts";
+import { uploadReceipt } from "@/lib/upload-receipt";
 import type { HolderStretch } from "@/lib/turns";
 import { Icon } from "./Icon";
 import { ErrorNote } from "./states";
@@ -27,10 +30,41 @@ type Props = {
 /** Records one payment: who (the slot), which month, when it was paid and how. The amount is shown, never typed. */
 export function PaymentForm(props: Props) {
   const [state, action, pending] = useActionState(recordPayment, initial);
+  const router = useRouter();
+  // The images chosen before saving; they can only be sent once the payment exists (and so has an id).
+  const chosen = useRef<File[]>([]);
+  const [sending, setSending] = useState(false);
+  const [receiptNote, setReceiptNote] = useState<{ ok: boolean; text: string } | null>(null);
+
+  useEffect(() => {
+    const files = chosen.current;
+    if (!state.paymentId) return;
+    chosen.current = [];
+    if (files.length === 0) return;
+    (async () => {
+      setSending(true);
+      setReceiptNote(null);
+      let attached = 0;
+      for (const file of files) {
+        const problem = await uploadReceipt(props.committeeId, state.paymentId as string, file);
+        if (problem) {
+          setReceiptNote({ ok: false, text: `The payment is saved, but a receipt was not attached: ${problem} You can add it from the payment's row.` });
+          break;
+        }
+        attached++;
+      }
+      if (attached === files.length) setReceiptNote({ ok: true, text: `${attached} receipt${attached === 1 ? "" : "s"} attached.` });
+      setSending(false);
+      router.refresh();
+    })();
+    // Runs once per saved payment.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.done]);
   // Submitted by hand, not with <form action>: React resets a form after its action, which would blank the controlled
   // fields on screen while their state still holds the old values (and would wipe what was typed after a refusal).
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setReceiptNote(null);
     const data = new FormData(event.currentTarget);
     startTransition(() => action(data));
   }
@@ -45,23 +79,40 @@ export function PaymentForm(props: Props) {
           <span>Saved. It is in the history.</span>
         </p>
       ) : null}
+      {sending ? (
+        <p className="note" role="status" style={{ marginBottom: 12 }}>
+          <span>Attaching the receipt…</span>
+        </p>
+      ) : receiptNote ? (
+        receiptNote.ok ? (
+          <p className="note ok" role="status" style={{ marginBottom: 12 }}>
+            <Icon name="check" />
+            <span>{receiptNote.text}</span>
+          </p>
+        ) : (
+          <div style={{ marginBottom: 12 }}>
+            <ErrorNote>{receiptNote.text}</ErrorNote>
+          </div>
+        )
+      ) : null}
       {state.error ? (
         <div style={{ marginBottom: 12 }}>
           <ErrorNote>{state.error}</ErrorNote>
         </div>
       ) : null}
-      <Fields key={`${state.done}-${props.defaults.slotId}-${props.defaults.period}`} {...props} problems={state.problems} pending={pending} />
+      <Fields key={`${state.done}-${props.defaults.slotId}-${props.defaults.period}`} {...props} problems={state.problems} pending={pending || sending} onFiles={(files) => (chosen.current = files)} />
     </form>
   );
 }
 
-function Fields({ instalmentText, periods, slots, recorded, today, defaults, problems, pending }: Props & { problems: PayState["problems"]; pending: boolean }) {
+function Fields({ instalmentText, periods, slots, recorded, today, defaults, problems, pending, onFiles }: Props & { problems: PayState["problems"]; pending: boolean; onFiles: (files: File[]) => void }) {
   const [slotId, setSlotId] = useState(defaults.slotId);
   const [period, setPeriod] = useState(String(defaults.period));
   // Controlled, so a refused entry keeps what was typed (a form's own reset after a submit would clear them).
   const [paidOn, setPaidOn] = useState(today);
   const [method, setMethod] = useState<string>(METHODS[0]);
   const [note, setNote] = useState("");
+  const [picked, setPicked] = useState<string[]>([]);
 
   const slot = slots.find((s) => s.id === slotId);
   const p = Number(period);
@@ -146,6 +197,32 @@ function Fields({ instalmentText, periods, slots, recorded, today, defaults, pro
         <label htmlFor="pay-note">Note (optional, only you see it)</label>
         <input className="input" id="pay-note" name="note" maxLength={PAYMENT_NOTE_MAX} value={note} onChange={(e) => setNote(e.target.value)} autoComplete="off" dir="auto" placeholder="For example: transaction number" {...bad("note")} />
         {why("note")}
+      </div>
+
+      <div className="field pickfile">
+        <label htmlFor="pay-files">Receipt screenshots (optional, up to {RECEIPTS_PER_PAYMENT})</label>
+        <input
+          className="input"
+          id="pay-files"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          onChange={(e) => {
+            const files = Array.from(e.target.files ?? []).slice(0, RECEIPTS_PER_PAYMENT);
+            onFiles(files);
+            setPicked(files.map((f) => f.name));
+          }}
+        />
+        <span className="hint">Large photos are shrunk on your phone first. They are stored privately: only you can open them.</span>
+        {picked.length > 0 ? (
+          <ul aria-label="Chosen images">
+            {picked.map((n, i) => (
+              <li key={i} dir="auto">
+                {n}
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </div>
 
       <button className="btn primary" disabled={pending || already}>

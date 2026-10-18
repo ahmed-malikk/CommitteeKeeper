@@ -4,8 +4,9 @@ import { CommitteeHeader } from "@/components/CommitteeHeader";
 import { Icon } from "@/components/Icon";
 import { PageTransition } from "@/components/PageTransition";
 import { PaymentForm } from "@/components/PaymentForm";
+import { ReceiptTools } from "@/components/ReceiptTools";
 import { EmptyState, ErrorNote } from "@/components/states";
-import { getCommittee, getPayments, getTurns, isUuid } from "@/lib/dal";
+import { getCommittee, getPayments, getReceipts, getTurns, isUuid } from "@/lib/dal";
 import { formatDate, todayInPakistan } from "@/lib/dates";
 import { formatRupees } from "@/lib/money";
 import { METHOD_LABELS, cellOf, currentPeriod, lateText, periodLabel, type Method, type PaidRecord } from "@/lib/payments";
@@ -40,8 +41,8 @@ export default async function PaymentsPage({
     );
   }
 
-  const [turns, payments] = await Promise.all([getTurns(id, c.periods), getPayments(id)]);
-  if (!turns || !payments) {
+  const [turns, payments, receipts] = await Promise.all([getTurns(id, c.periods), getPayments(id), getReceipts(id)]);
+  if (!turns || !payments || !receipts) {
     return (
       <PageTransition>
         <CommitteeHeader committee={c} active="payments" />
@@ -61,11 +62,13 @@ export default async function PaymentsPage({
   const period = Number.isInteger(asked) && asked >= 1 && asked <= c.periods ? asked : Math.min(Math.max(now, 1), c.periods);
 
   const ordered = inPlayOrder(turns);
-  const byKey = new Map<string, PaidRecord & { method: string }>(payments.map((p) => [`${p.slotId}|${p.period}`, { slotId: p.slotId, period: p.period, paidOn: p.paidOn, method: p.method }]));
+  const byKey = new Map<string, PaidRecord & { method: string; paymentId: string }>(
+    payments.map((p) => [`${p.slotId}|${p.period}`, { slotId: p.slotId, period: p.period, paidOn: p.paidOn, method: p.method, paymentId: p.id }]),
+  );
   const rows = ordered.map((t) => {
     const holder = t.holders.find((h) => h.fromPeriod <= period && (h.toPeriod === null || h.toPeriod >= period));
     const record = byKey.get(`${t.id}|${period}`);
-    return { slot: t, who: holder?.name ?? t.label, cell: cellOf(terms, today, t.id, period, record), method: record?.method };
+    return { slot: t, who: holder?.name ?? t.label, cell: cellOf(terms, today, t.id, period, record), method: record?.method, paymentId: record?.paymentId };
   });
   const paidCount = rows.filter((r) => r.cell.state === "paid").length;
   const collected = paidCount * c.amount;
@@ -138,6 +141,9 @@ export default async function PaymentsPage({
                         <>Not due until {formatDate(r.cell.due)}</>
                       )}
                     </span>
+                    {r.cell.state === "paid" && r.paymentId ? (
+                      <ReceiptTools committeeId={id} paymentId={r.paymentId} who={r.who} receipts={receipts.get(r.paymentId) ?? []} editable={open} />
+                    ) : null}
                   </div>
                   {r.cell.state === "paid" ? (
                     <span className="chip paid">
