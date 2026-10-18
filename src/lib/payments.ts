@@ -121,3 +121,25 @@ export function periodLabel(startDate: string, period: number): string {
   const [y, m] = dueDateFor(startDate, 1, period).split("-").map(Number);
   return `${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][m - 1]} ${y}`;
 }
+
+/** The longest reason that can be written with a correction. */
+export const CORRECTION_REASON_MAX = 200;
+
+export type CorrectionInput = { paidOn: string; method: string; note: string; reason: string; cancel: boolean };
+export type CorrectionProblems = Partial<Record<"paidOn" | "method" | "note" | "reason", string>>;
+
+/**
+ * Checks a correction before it goes to the database. A correction is a new entry that points to the original;
+ * the original stays. It always needs a reason, so the history says why. Cancelling is a correction that voids the payment.
+ */
+export function correctionProblems(input: CorrectionInput, today: string): CorrectionProblems {
+  const problems: CorrectionProblems = {};
+  if (!isRealDate(input.paidOn)) problems.paidOn = "Enter the date the money was paid.";
+  else if (input.paidOn > today) problems.paidOn = "The payment date can’t be in the future. Enter the day it was really paid.";
+  if (!(METHODS as readonly string[]).includes(input.method)) problems.method = "Choose how it was paid.";
+  if ([...input.note.trim()].length > PAYMENT_NOTE_MAX) problems.note = `Keep the note to ${PAYMENT_NOTE_MAX} characters or fewer.`;
+  const reason = input.reason.trim();
+  if (reason === "") problems.reason = input.cancel ? "Say why this payment is being cancelled. It is written to the history." : "Say what was wrong. It is written to the history.";
+  else if ([...reason].length > CORRECTION_REASON_MAX) problems.reason = `Keep the reason to ${CORRECTION_REASON_MAX} characters or fewer.`;
+  return problems;
+}

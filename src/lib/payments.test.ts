@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cellOf, currentPeriod, dueDateFor, lateText, paymentProblems, periodLabel, summarise, type CommitteeTerms } from "./payments";
+import { cellOf, correctionProblems, currentPeriod, dueDateFor, lateText, paymentProblems, periodLabel, summarise, type CommitteeTerms } from "./payments";
 
 const terms: CommitteeTerms = { startDate: "2026-10-01", dueDay: 10, graceDays: 2, periods: 3 };
 
@@ -107,5 +107,23 @@ describe("periodLabel", () => {
   it("names the month a period falls in, across a year end", () => {
     expect(periodLabel("2026-10-01", 1)).toBe("Oct 2026");
     expect(periodLabel("2026-10-01", 4)).toBe("Jan 2027");
+  });
+});
+
+describe("correctionProblems", () => {
+  const ok = { paidOn: "2026-01-12", method: "cash", note: "", reason: "Typed the wrong day", cancel: false };
+  it("accepts a correction with a reason", () => {
+    expect(correctionProblems(ok, "2026-02-01")).toEqual({});
+  });
+  it("always wants a reason, and words it for a cancellation too", () => {
+    expect(correctionProblems({ ...ok, reason: "  " }, "2026-02-01").reason).toMatch(/what was wrong/);
+    expect(correctionProblems({ ...ok, reason: "", cancel: true }, "2026-02-01").reason).toMatch(/cancelled/);
+  });
+  it("refuses a future date, a bad date, an unknown method and a long reason or note", () => {
+    expect(correctionProblems({ ...ok, paidOn: "2026-02-02" }, "2026-02-01").paidOn).toMatch(/future/);
+    expect(correctionProblems({ ...ok, paidOn: "2026-02-30" }, "2026-02-01").paidOn).toBeDefined();
+    expect(correctionProblems({ ...ok, method: "cheque" }, "2026-02-01").method).toBeDefined();
+    expect(correctionProblems({ ...ok, reason: "x".repeat(201) }, "2026-02-01").reason).toMatch(/200/);
+    expect(correctionProblems({ ...ok, note: "x".repeat(201) }, "2026-02-01").note).toMatch(/200/);
   });
 });

@@ -3,7 +3,7 @@
 import { getCommittee, isUuid, requireUser } from "@/lib/dal";
 import { explainDbError } from "@/lib/db-errors";
 import { todayInPakistan } from "@/lib/dates";
-import { paymentProblems, type PaymentProblems } from "@/lib/payments";
+import { correctionProblems, paymentProblems, type CorrectionProblems, type PaymentProblems } from "@/lib/payments";
 import { refreshPayments } from "@/lib/refresh";
 import { createClient } from "@/lib/supabase/server";
 
@@ -72,4 +72,40 @@ export async function removeReceipt(committeeId: string, receiptId: string): Pro
   if (gone.error) console.error("receipt file not deleted:", data, gone.error.message);
   refreshPayments(committeeId);
   return { error: null };
+}
+
+export type CorrectState = { error: string | null; problems: CorrectionProblems; done: number };
+
+/**
+ * Corrects or cancels a payment. Nothing is edited: the database adds a new entry that points to the original, and the
+ * original stays in the history (rule C1). The reason is required so the history says why. Cancelling voids the payment.
+ */
+export async function correctPayment(previous: CorrectState, formData: FormData): Promise<CorrectState> {
+  await requireUser();
+  const fail = (error: string | null, problems: CorrectionProblems = {}): CorrectState => ({ error, problems, done: previous.done });
+
+  const id = text(formData, "committeeId");
+  const paymentId = text(formData, "paymentId");
+  const c = isUuid(id) ? await getCommittee(id) : null;
+  if (!c || !isUuid(paymentId)) return fail("That payment was not found. Refresh the page and try again.");
+  if (c.status !== "running") return fail("Payments can only be corrected while the committee is running.");
+
+  const input = { paidOn: text(formData, "paidOn"), method: text(formData, "method"), note: text(formData, "note"), reason: text(formData, "reason"), cancel: text(formData, "cancel") === "yes" };
+  const problems = correctionProblems(input, todayInPakistan());
+  if (Object.keys(problems).length > 0) return fail(null, problems);
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("correct_payment", {
+    p_committee_id: id,
+    p_payment_id: paymentId,
+    p_paid_on: input.paidOn,
+    p_method: input.method,
+    p_note: input.note.trim() === "" ? undefined : input.note.trim(),
+    p_cancel: input.cancel,
+    p_reason: input.reason.trim(),
+  });
+  if (error) return fail(explainDbError(error, input.cancel ? "cancel the payment" : "correct the payment"));
+
+  refreshPayments(id);
+  return { error: null, problems: {}, done: previous.done + 1 };
 }

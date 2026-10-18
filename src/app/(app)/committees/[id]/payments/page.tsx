@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CommitteeHeader } from "@/components/CommitteeHeader";
+import { CorrectPayment } from "@/components/CorrectPayment";
 import { Icon } from "@/components/Icon";
 import { PageTransition } from "@/components/PageTransition";
 import { PaymentForm } from "@/components/PaymentForm";
@@ -185,6 +186,9 @@ export default async function PaymentsPage({
                     </span>
                     {r.cell.state === "paid" && r.paymentId ? (
                       <ReceiptTools committeeId={id} paymentId={r.paymentId} who={r.who} receipts={receipts.get(r.paymentId) ?? []} editable={open} />
+                    ) : null}
+                    {open && r.cell.state === "paid" && r.paymentId ? (
+                      <CorrectPayment committeeId={id} paymentId={r.paymentId} who={r.who} month={periodLabel(c.start_date, period)} paidOn={r.cell.paidOn as string} method={r.method as string} today={today} />
                     ) : null}
                   </div>
                   {r.cell.state === "paid" ? (
