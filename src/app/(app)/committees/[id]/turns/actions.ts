@@ -2,8 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getCommittee, isUuid, requireUser } from "@/lib/dal";
+import { getCommittee, getTurns, isUuid, requireUser } from "@/lib/dal";
+import { todayInPakistan } from "@/lib/dates";
 import { explainDbError } from "@/lib/db-errors";
+import { payoutShares } from "@/lib/turns";
 import { createClient } from "@/lib/supabase/server";
 
 /** `done` goes up by one each time an action succeeds, so a form knows when to clear itself. */
@@ -125,4 +127,38 @@ export async function swapTurns(previous: TurnState, formData: FormData): Promis
   if (error) return fail(explainDbError(error, "swap the turns"), previous);
   refresh(target.id);
   redirect(`/committees/${target.id}/turns?saved=swapped`);
+}
+
+/**
+ * Records that a turn's pot was handed over (rule M3). The split is worked out here from the holders the database has,
+ * by the tested payoutShares function, never taken from the browser. The database checks it again: every receiver must
+ * have held the slot and the shares must add up to the pot exactly. After this the turn is locked.
+ */
+export async function recordPayout(previous: TurnState, formData: FormData): Promise<TurnState> {
+  const target = await open(formData);
+  if (!target) return fail("That committee was not found.", previous);
+  const slotId = text(formData, "slotId");
+  if (!isUuid(slotId)) return fail("Choose the turn that was paid out.", previous);
+  const paidOn = text(formData, "paidOn");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(paidOn) || Number.isNaN(Date.parse(`${paidOn}T00:00:00Z`))) return fail("Enter the date the pot was handed over.", previous);
+  if (paidOn > todayInPakistan()) return fail("The payout date can’t be in the future. Enter the day it was really handed over.", previous);
+
+  const turns = await getTurns(target.id, target.committee.periods);
+  if (!turns) return fail("We couldn't load the turns. Check the connection and try again.", previous);
+  const turn = turns.find((t) => t.id === slotId);
+  if (!turn) return fail("That turn was not found in this committee.", previous);
+  if (turn.paidOut) return fail("That turn was already paid out.", previous);
+  const shares = payoutShares(turn.holders, target.committee.amount, target.committee.periods);
+  if (!shares) return fail("This turn’s holders don’t cover every month, so the split can’t be worked out. Check the Members page.", previous);
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("record_payout", {
+    p_committee_id: target.id,
+    p_slot_id: slotId,
+    p_paid_on: paidOn,
+    p_split: shares.map((s) => ({ member_id: s.memberId, amount: s.amount })),
+  });
+  if (error) return fail(explainDbError(error, "record the payout"), previous);
+  refresh(target.id);
+  redirect(`/committees/${target.id}/turns?saved=paidout`);
 }

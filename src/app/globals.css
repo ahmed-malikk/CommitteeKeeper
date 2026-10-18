@@ -397,3 +397,7 @@ label.btn[aria-disabled="true"] { opacity: .6; pointer-events: none; }
 .paygrid td a:hover { outline: 1px solid var(--line); }
 @media print { .gridwrap { overflow: visible; } }
 
+/* ── Record a payout (#17) ────────────────────────────────────────────────── */
+.payout-split { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+.payout-split ul { margin: 0; padding-left: 18px; }
+.payout-split li { overflow-wrap: anywhere; }

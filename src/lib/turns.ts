@@ -122,6 +122,23 @@ export function potSplit(holders: HolderStretch[], amount: number, periods: numb
   }
 }
 
+export type PayoutShare = { memberId: string; name: string; amount: number };
+
+/**
+ * Who receives what when a slot's pot is handed over, including the case of one holder (who gets all of it).
+ * The same function gives the preview on screen and the figures that are stored, so they cannot differ.
+ * Null when the holders do not cover every period exactly once: nothing is shown or stored rather than a wrong figure.
+ */
+export function payoutShares(holders: HolderStretch[], amount: number, periods: number): PayoutShare[] | null {
+  try {
+    const shares = splitPot(amount, periods, holders.map((h) => ({ memberId: h.memberId, fromPeriod: h.fromPeriod, toPeriod: h.toPeriod })));
+    const names = new Map(holders.map((h) => [h.memberId, h.name]));
+    return shares.map((s) => ({ memberId: s.memberId, name: names.get(s.memberId) ?? "Unknown", amount: s.amount }));
+  } catch {
+    return null;
+  }
+}
+
 /** The split there would be if `replacement` took the slot over from `fromPeriod`. The current holder's stretch ends the period before. */
 export function previewReplacement(
   holders: HolderStretch[],

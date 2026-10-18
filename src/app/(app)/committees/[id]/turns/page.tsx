@@ -3,14 +3,15 @@ import { CommitteeHeader } from "@/components/CommitteeHeader";
 import { PageTransition } from "@/components/PageTransition";
 import { TurnOrderEditor } from "@/components/TurnOrderEditor";
 import { DrawPanel, MethodChanger } from "@/components/DrawPanel";
+import { PayoutPanel } from "@/components/PayoutPanel";
 import { SwapPanel } from "@/components/SwapPanel";
 import { Icon } from "@/components/Icon";
 import { ErrorNote } from "@/components/states";
 import { ORDER_LABELS, type OrderMethod } from "@/lib/agreement";
-import { formatDate } from "@/lib/dates";
+import { formatDate, todayInPakistan } from "@/lib/dates";
 import { getCommittee, getDrawHistory, getSwapHistory, getTurns } from "@/lib/dal";
 import { formatRupees } from "@/lib/money";
-import { describeDraw, describeSwap, inPlayOrder, potSplit } from "@/lib/turns";
+import { describeDraw, describeSwap, inPlayOrder, payoutShares, potSplit } from "@/lib/turns";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -24,6 +25,7 @@ const SAVED: Record<string, string> = {
   redrawn: "Redone. The earlier result stays in the history below.",
   method: "Saved. The way of deciding turns has changed.",
   swapped: "Swapped. The change is in the history below.",
+  paidout: "Payout recorded. The turn is locked.",
 };
 
 export default async function TurnsPage({
@@ -59,6 +61,20 @@ export default async function TurnsPage({
   const swaps = (swapHistory ?? []).map((e) => describeSwap(e, (slotId) => labelOf.get(slotId) ?? "a turn")).reverse();
   // Turns that can swap: they have a place and are not paid out.
   const swappable = movable.filter((t) => t.position !== null).map((t) => ({ id: t.id, place: t.position as number, label: t.label }));
+
+  // Turns that can be paid out: they have a place and have not been paid out yet, next in line first.
+  const payable = movable
+    .filter((t) => t.position !== null)
+    .map((t) => {
+      const shares = payoutShares(t.holders, c.amount, c.periods);
+      return {
+        id: t.id,
+        place: t.position as number,
+        label: t.label,
+        potText: money(c.amount * c.periods),
+        shares: shares ? shares.map((s) => ({ name: s.name, amountText: money(s.amount) })) : null,
+      };
+    });
 
   return (
     <PageTransition>
@@ -128,6 +144,7 @@ export default async function TurnsPage({
                   canRedoLast={lastPlaced !== undefined && !lastPlaced.paidOut}
                 />
               ) : null}
+              {status === "running" && payable.length > 0 ? <PayoutPanel committeeId={id} choices={payable} today={todayInPakistan()} /> : null}
               {status === "running" && swappable.length >= 2 ? <SwapPanel committeeId={id} choices={swappable} /> : null}
               {open ? <MethodChanger committeeId={id} method={method} status={status} /> : null}
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describeDraw, describeSwap, holderAt, holderLabel, inPlayOrder, moveBy, potSplit, previewReplacement, sameList } from "./turns";
+import { describeDraw, describeSwap, holderAt, holderLabel, inPlayOrder, moveBy, payoutShares, potSplit, previewReplacement, sameList } from "./turns";
 
 describe("holderLabel", () => {
   it("is just the name for a slot with one holder", () => {
@@ -161,3 +161,23 @@ describe("holderAt", () => {
   });
 });
 
+describe("payoutShares", () => {
+  it("gives the whole pot to a slot that never changed hands", () => {
+    expect(payoutShares([{ memberId: "ali", name: "Ali", fromPeriod: 1, toPeriod: null }], 1000, 12)).toEqual([{ memberId: "ali", name: "Ali", amount: 12000 }]);
+  });
+  it("splits the pot by the periods each holder covered, and adds a member's two stretches together", () => {
+    const holders = [
+      { memberId: "ali", name: "Ali", fromPeriod: 1, toPeriod: 3 },
+      { memberId: "sara", name: "Sara", fromPeriod: 4, toPeriod: 9 },
+      { memberId: "ali", name: "Ali", fromPeriod: 10, toPeriod: null },
+    ];
+    expect(payoutShares(holders, 1000, 12)).toEqual([
+      { memberId: "ali", name: "Ali", amount: 6000 },
+      { memberId: "sara", name: "Sara", amount: 6000 },
+    ]);
+  });
+  it("is null when the holders leave a gap, rather than a wrong figure", () => {
+    expect(payoutShares([{ memberId: "ali", name: "Ali", fromPeriod: 2, toPeriod: null }], 1000, 12)).toBeNull();
+    expect(payoutShares([], 1000, 12)).toBeNull();
+  });
+});
