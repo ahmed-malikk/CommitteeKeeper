@@ -164,3 +164,27 @@ export async function replaceHolder(previous: MemberState, formData: FormData): 
   revalidatePath(`/committees/${target.id}/turns`);
   redirect(`/committees/${target.id}/members?replaced=1`);
 }
+
+export type LinkResult = { error: string | null };
+
+/** Turns a member's private link on or off. Off means the link gives the same empty answer as one that never existed. */
+export async function setMemberLink(committeeId: string, memberId: string, enabled: boolean): Promise<LinkResult> {
+  await requireUser();
+  if (!isUuid(committeeId) || !isUuid(memberId)) return { error: "That member was not found." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_member_link", { p_committee_id: committeeId, p_member_id: memberId, p_enabled: enabled });
+  if (error) return { error: explain(error, enabled ? "turn the link on" : "turn the link off") };
+  refresh(committeeId);
+  return { error: null };
+}
+
+/** Replaces a member's link with a new one. The old link stops working at once. */
+export async function newMemberLink(committeeId: string, memberId: string): Promise<LinkResult> {
+  await requireUser();
+  if (!isUuid(committeeId) || !isUuid(memberId)) return { error: "That member was not found." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("new_member_link", { p_committee_id: committeeId, p_member_id: memberId });
+  if (error) return { error: explain(error, "make a new link") };
+  refresh(committeeId);
+  return { error: null };
+}

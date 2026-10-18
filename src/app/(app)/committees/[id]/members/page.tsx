@@ -24,7 +24,7 @@ export default async function MembersPage({ params, searchParams }: { params: Pr
 
   const supabase = await createClient();
   const [members, slots, holders] = await Promise.all([
-    supabase.from("members").select("id, name, email, phone").eq("committee_id", id).order("created_at"),
+    supabase.from("members").select("id, name, email, phone, link_token, link_enabled").eq("committee_id", id).order("created_at"),
     supabase.from("slots").select("id").eq("committee_id", id),
     supabase.from("slot_holders").select("slot_id, member_id, to_period, slots!inner(committee_id)").eq("slots.committee_id", id),
   ]);

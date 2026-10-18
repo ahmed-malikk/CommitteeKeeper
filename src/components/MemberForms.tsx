@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef } from "react";
 import { addMember, addSlot, editMember, removeMember, removeSlot, type MemberState } from "@/app/(app)/committees/[id]/members/actions";
+import { MemberLink } from "./MemberLink";
 import { EMAIL_MAX, MEMBER_NAME_MAX, PHONE_MAX, type MemberProblems } from "@/lib/member";
 import { Icon } from "./Icon";
 import { ErrorNote } from "./states";
@@ -83,7 +84,7 @@ export function AddMemberForm({ committeeId, withSlots, room }: { committeeId: s
 
 type RowProps = {
   committeeId: string;
-  member: { id: string; name: string; email: string | null; phone: string | null };
+  member: { id: string; name: string; email: string | null; phone: string | null; link_token: string; link_enabled: boolean };
   slots: number;
   /** Stretches of a slot this member covered that someone else has taken over since. */
   earlier: number;
@@ -156,6 +157,8 @@ export function MemberRow({ committeeId, member, slots, earlier, duesText, canCh
           <ErrorNote>{error}</ErrorNote>
         </div>
       ) : null}
+
+      {readOnly ? null : <MemberLink committeeId={committeeId} memberId={member.id} name={member.name} token={member.link_token} enabled={member.link_enabled} />}
 
       {readOnly ? null : (
       <details className="edit" ref={details}>

@@ -432,3 +432,9 @@ label.btn[aria-disabled="true"] { opacity: .6; pointer-events: none; }
 .li.rem .today { color: var(--tealink); }
 @media (max-width: 640px) { .li.rem .btn { flex: 1 1 auto; justify-content: center; } }
 @media print { .li.rem .btn { display: none !important; } }
+
+/* ── Private member links (#21) ───────────────────────────────────────────── */
+.mlink { margin-top: 10px; }
+.mlinkrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.mlinkurl { flex: 1 1 14rem; min-width: 0; font-family: var(--num); font-size: .8125rem; padding-block: 6px; }
+@media print { .mlink { display: none !important; } }
