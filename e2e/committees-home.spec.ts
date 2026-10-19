@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { LISTS_STATE, hasLogin, seedCommittee } from "./helpers";
+import { LISTS_STATE, hasLogin, organiserDb, seedCommittee } from "./helpers";
 
 test.use({ storageState: LISTS_STATE });
 test.skip(!hasLogin, "needs the test login");
@@ -42,5 +42,33 @@ test.describe("the organiser's home screen (US-22)", () => {
     await expect(page.getByRole("link", { name: new RegExp(String(stamp)) })).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
+  });
+
+  test("a person who organises one committee and is a member of another sees both, kept apart (FR-20)", async ({ page }) => {
+    test.setTimeout(180_000);
+    const stamp = Date.now();
+    const mine = `Organised ${stamp}`;
+    const theirs = `Joined ${stamp}`;
+    // Somebody else's committee (the main test organiser's) with a member, Sana, whose link this account adds to itself.
+    const other = await seedCommittee({ names: ["Sana", "Bilal"], name: theirs, start: true, moveFirstLater: true });
+    const row = await (await organiserDb()).from("members").select("link_token").eq("committee_id", other.id).eq("name", "Sana").single();
+    expect(row.error).toBeNull();
+    const attached = await (await organiserDb("lists")).rpc("attach_account", { p_token: row.data?.link_token as string });
+    expect(attached.data).toBe(true);
+    await seedCommittee({ names: [], periods: 2, method: "draw_monthly", name: mine, as: "lists" });
+
+    await page.goto("/committees");
+    const organised = page.getByRole("region", { name: "All committees" });
+    await expect(organised.getByRole("link", { name: new RegExp(mine) })).toContainText("You organise");
+    await expect(organised.getByRole("link", { name: new RegExp(theirs) })).toHaveCount(0);
+
+    const member = page.getByRole("region", { name: "Committees where you are a member" });
+    const card = member.getByRole("link", { name: new RegExp(theirs) });
+    await expect(card).toContainText("Sana");
+    await expect(card).toContainText("Running");
+    await expect(member.getByRole("link", { name: new RegExp(mine) })).toHaveCount(0);
+    // The member's own page for it opens from here.
+    await card.click();
+    await expect(page.getByText("Hello Sana")).toBeVisible();
   });
 });

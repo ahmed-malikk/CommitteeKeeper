@@ -56,9 +56,10 @@ test.describe("an optional member account, view only (US-19)", () => {
     await visitor.goto(`/m/${token}`);
     await expect(visitor.getByText("This link is in your account.")).toBeVisible();
 
-    // The account holds only member views: it shows no organiser data of its own.
+    // The account holds only member views: on the home screen the committee is under "member", never under the ones it organises.
     await visitor.goto("/committees");
-    await expect(visitor.getByRole("link", { name: new RegExp(name) })).toHaveCount(0);
+    await expect(visitor.getByRole("region", { name: "All committees" })).toHaveCount(0);
+    await expect(visitor.getByRole("region", { name: "Committees where you are a member" }).getByRole("link", { name: new RegExp(name) })).toBeVisible();
     await context.close();
   });
 

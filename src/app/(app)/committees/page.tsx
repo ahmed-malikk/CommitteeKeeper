@@ -5,6 +5,7 @@ import { PopText } from "@/components/PopText";
 import { EmptyState, ErrorNote } from "@/components/states";
 import { getPaymentFacts, payerName, requireUser } from "@/lib/dal";
 import { formatDate, todayInPakistan } from "@/lib/dates";
+import { parseMemberView, progressText, turnText, type MemberView } from "@/lib/member-view";
 import { lateText, summarise } from "@/lib/payments";
 import { formatRupees } from "@/lib/money";
 import { createClient } from "@/lib/supabase/server";
@@ -44,6 +45,32 @@ export default async function Committees() {
     })
     .sort((a, b) => b.cell.daysLate - a.cell.daysLate)
     .slice(0, 6);
+  // Committees this account belongs to as a member (through a private link attached to the account), kept apart from the ones it organises.
+  const { data: memberData, error: memberError } = await supabase.rpc("member_home");
+  const memberViews: MemberView[] = memberError ? [] : (Array.isArray(memberData) ? memberData : []).map(parseMemberView).filter((v): v is MemberView => v !== null);
+  const memberSection =
+    memberViews.length > 0 ? (
+      <section aria-labelledby="member-h" style={{ marginTop: 28 }}>
+        <h2 id="member-h">Committees where you are a member</h2>
+        <div className="list">
+          {memberViews.map((v) => (
+            <Link className="li" key={v.me.member_id} href={`/me/${v.me.member_id}`}>
+              <div className="grow">
+                <span className="t" dir="auto">
+                  {v.committee.name}
+                </span>
+                <span className="s" dir="auto">
+                  You are {v.me.name} &middot; {progressText(v)}
+                </span>
+                {v.my_slots[0] ? <span className="s">{turnText(v.my_slots[0], v.committee.start_date)}</span> : null}
+              </div>
+              <span className={`chip ${STATUS_CLASS[v.committee.status]}`}>{STATUS_TEXT[v.committee.status]}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+    ) : null;
+
   const lateTotal = [...summaries.values()].reduce((n, e) => n + e.summary.late.length, 0);
 
   const create = (
@@ -142,6 +169,7 @@ export default async function Committees() {
             </section>
           </div>
         )}
+        {memberSection}
       </div>
     </PageTransition>
   );
