@@ -9,6 +9,7 @@ import { ORDER_LABELS, type OrderMethod } from "@/lib/agreement";
 import { formatDate, ordinal, todayInPakistan } from "@/lib/dates";
 import { formatRupees } from "@/lib/money";
 import { StatusPanel } from "@/components/StatusPanel";
+import { VisibilityPanel } from "@/components/VisibilityPanel";
 import { completeProblems, lastDueDate, startProblems } from "@/lib/committee";
 import { getCommittee, getCompletionFacts, getSlotInfo } from "@/lib/dal";
 
@@ -56,7 +57,6 @@ export default async function CommitteePage({
     : undefined;
 
   const money = (n: number) => formatRupees(n, { style: c.display_style, grouping: c.display_grouping });
-  const yes = (b: boolean) => (b ? "Yes" : "No");
   const days = (n: number) => `${n} day${n === 1 ? "" : "s"}`;
 
   return (
@@ -112,17 +112,11 @@ export default async function CommitteePage({
         </div>
 
         <div className="stack">
-          <section>
-            <h2>What members can see</h2>
-            <div className="list" style={{ padding: "0 18px" }}>
-              <Row t="Who has paid" v={yes(c.members_see_payments)} />
-              <Row t="Whose turn it is" v={yes(c.members_see_turns)} />
-              <Row t="The history" v={yes(c.members_see_history)} />
-            </div>
-            <p className="sm mut" style={{ marginTop: 8 }}>
-              A member always sees their own turn, payments and receipts, and nothing about anyone else.
-            </p>
-          </section>
+          <VisibilityPanel
+            committeeId={id}
+            initial={{ payments: c.members_see_payments, turns: c.members_see_turns, history: c.members_see_history }}
+            readOnly={c.status === "completed"}
+          />
           <section>
             <h2>How amounts look</h2>
             <p className="note">

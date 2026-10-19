@@ -454,3 +454,6 @@ label.btn[aria-disabled="true"] { opacity: .6; pointer-events: none; }
 .maccount { padding-top: 6px; border-top: 1px solid var(--line2); }
 .maccount form { margin-top: 6px; }
 @media print { .maccount { display: none !important; } }
+
+/* ── What members can see (#25) ───────────────────────────────────────────── */
+.sw input[type=checkbox]:disabled { opacity: .6; cursor: not-allowed; }
