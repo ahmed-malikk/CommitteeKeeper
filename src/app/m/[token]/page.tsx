@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { MemberBody } from "@/components/MemberBody";
 import { PageTransition } from "@/components/PageTransition";
 import { PublicShell } from "@/components/PublicShell";
 import { looksLikeToken, parseMemberView } from "@/lib/member-view";
@@ -21,12 +22,7 @@ export default async function MemberPage({ params }: { params: Promise<{ token: 
   return (
     <PublicShell>
       <PageTransition>
-        <div className="prose" style={{ paddingTop: 24 }}>
-          <h1 dir="auto">{view.committee.name}</h1>
-          <p className="mut" dir="auto">
-            Hello {view.me.name}.
-          </p>
-        </div>
+        <MemberBody view={view} />
       </PageTransition>
     </PublicShell>
   );
