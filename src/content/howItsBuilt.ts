@@ -6,7 +6,7 @@ export const REPO = "https://github.com/ahmed-malikk/CommitteeKeeper";
 /** Real numbers from the last full run. Update them from the test output, never by guessing. */
 export const TESTS = {
   unit: 189,
-  system: 223,
+  system: 226,
   browsers: "runs counted across desktop Chrome, desktop Edge for the core flows, and a 375 px phone view for layout, touch and accessibility",
   asOf: "19 October 2026",
 };
@@ -75,6 +75,11 @@ export const LINKS = {
   items: [
     ["Source code on GitHub", REPO],
     ["README", `${REPO}#readme`],
+    ["Product requirements (PRD)", `${REPO}/blob/main/docs/PRD.md`],
+    ["Business requirements (BRD)", `${REPO}/blob/main/docs/BRD.md`],
+    ["Business rules", `${REPO}/blob/main/docs/business-rules.md`],
+    ["Test plan", `${REPO}/blob/main/docs/test-plan.md`],
+    ["Test report", `${REPO}/blob/main/docs/test-report.md`],
     ["Licence (MIT)", `${REPO}/blob/main/LICENSE`],
   ] as const,
 };
