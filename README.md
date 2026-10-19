@@ -4,7 +4,9 @@ Keep your kameti honest: who paid, whose turn it is, and a history nobody can qu
 
 CommitteeKeeper is a web app for the organiser of a kameti (a rotating savings committee). The organiser records payments and receipts, runs the draw, handles members who leave, and keeps a permanent history. Members can follow their own turn from a private link, without installing anything.
 
-> **Status:** under construction. This page grows as features ship; see the [project board](https://github.com/users/ahmed-malikk/projects/4) for what is built and what is next.
+> **Status:** v1.0, live at [committeekeeper.vercel.app](https://committeekeeper.vercel.app). Every planned feature is built and tested ([test report](docs/test-report.md)). Not yet used by a real organiser for a real committee.
+
+**Documents:** [PRD](docs/PRD.md) · [BRD](docs/BRD.md) · [business rules](docs/business-rules.md) · [test plan](docs/test-plan.md) · [test report](docs/test-report.md) · [API requests](docs/api/manual-api-testing.md)
 
 ## Run it locally
 
