@@ -491,3 +491,27 @@ label.btn[aria-disabled="true"] { opacity: .6; pointer-events: none; }
 .linkmore > summary::-webkit-details-marker { display: none; }
 .linkmorebody { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
 .mlinkmanual { margin-top: 8px; overflow-wrap: anywhere; }
+
+/* ── Consistent motion (#31) ──────────────────────────────────────────────── */
+/* One vocabulary for everything that appears: it rises a short way (half of --shift for small surfaces) and fades in on --ease over
+   --dur; things that leave do the same backwards. Reduced motion keeps the fade and drops the travel and the scale, so nothing
+   depends on movement. Buttons and rows already lift and press (see .btn); pages rise (.rise); this covers the rest. */
+:root { --dur: .3s; --pop-scale: .98; interpolate-size: allow-keywords; }
+@keyframes pop-in { from { opacity: 0; translate: 0 calc(var(--shift) * .5); scale: var(--pop-scale); } }
+
+/* Messages and confirm boxes that appear after an action */
+.note, .hint.bad { animation: pop-in var(--dur) var(--ease) both; }
+
+/* Panels that open (the edit details, link settings): the content grows and fades in instead of jumping */
+details::details-content { block-size: 0; overflow: clip; opacity: 0; transition: block-size var(--dur) var(--ease), opacity var(--dur) var(--ease), content-visibility var(--dur) allow-discrete; }
+details[open]::details-content { block-size: auto; opacity: 1; }
+
+/* Dialogs rise in over a backdrop that fades in, and fall out the same way */
+.qrdialog { opacity: 0; translate: 0 calc(var(--shift) * .75); scale: var(--pop-scale); transition: opacity var(--dur) var(--ease), translate var(--dur) var(--ease), scale var(--dur) var(--ease), overlay var(--dur) allow-discrete, display var(--dur) allow-discrete; }
+.qrdialog[open] { opacity: 1; translate: 0 0; scale: 1; }
+@starting-style { .qrdialog[open] { opacity: 0; translate: 0 calc(var(--shift) * .75); scale: var(--pop-scale); } }
+.qrdialog::backdrop { background: rgb(20 52 59 / 0); transition: background var(--dur) var(--ease), overlay var(--dur) allow-discrete, display var(--dur) allow-discrete; }
+.qrdialog[open]::backdrop { background: rgb(20 52 59 / .45); }
+@starting-style { .qrdialog[open]::backdrop { background: rgb(20 52 59 / 0); } }
+@media (prefers-reduced-motion: reduce) { :root { --pop-scale: 1; } }
+@media print { .note, .hint.bad { animation: none; } }
