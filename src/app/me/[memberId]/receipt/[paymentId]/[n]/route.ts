@@ -14,5 +14,6 @@ export async function GET(_request: Request, { params }: { params: Promise<{ mem
   if (!isUuid(memberId) || !isUuid(paymentId) || !Number.isInteger(which) || which < 1 || which > 2) return none;
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("member_receipt_paths_account", { p_member_id: memberId, p_payment_id: paymentId });
-  return receiptResponse(error ? null : (data as string[]), which);
+  if (error) return NextResponse.json({ error: "We couldn't open the receipt. Try again." }, { status: 502, headers: { "Cache-Control": "no-store" } });
+  return receiptResponse(data as string[], which);
 }

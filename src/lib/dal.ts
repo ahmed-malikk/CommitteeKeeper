@@ -149,32 +149,60 @@ export async function getPaymentFacts(committeeIds: string[]): Promise<Map<strin
   const facts = new Map<string, PaymentFacts>(committeeIds.map((id) => [id, { slotIds: [], paid: [], holders: new Map() }]));
   if (committeeIds.length === 0) return facts;
   const supabase = await createClient();
-  const [slots, payments, holders] = await Promise.all([
-    supabase.from("slots").select("id, committee_id, created_at").in("committee_id", committeeIds).order("created_at"),
-    supabase.from("payments_current").select("committee_id, slot_id, period, paid_on").in("committee_id", committeeIds),
-    supabase
-      .from("slot_holders")
-      .select("slot_id, member_id, from_period, to_period, members(name), slots!inner(committee_id)")
-      .in("slots.committee_id", committeeIds)
-      .order("from_period"),
-  ]);
-  if (slots.error || payments.error || holders.error) return null;
 
-  const committeeOfSlot = new Map<string, string>();
-  for (const s of slots.data ?? []) {
-    facts.get(s.committee_id)?.slotIds.push(s.id);
-    committeeOfSlot.set(s.id, s.committee_id);
-  }
-  for (const p of payments.data ?? []) facts.get(p.committee_id)?.paid.push({ slotId: p.slot_id, period: p.period, paidOn: p.paid_on });
-  for (const h of holders.data ?? []) {
-    const f = facts.get(committeeOfSlot.get(h.slot_id) ?? "");
-    if (!f) continue;
-    const member = h.members as unknown as { name: string } | null;
-    const list = f.holders.get(h.slot_id) ?? [];
-    list.push({ memberId: h.member_id, name: member?.name ?? "Unknown", fromPeriod: h.from_period, toPeriod: h.to_period });
-    f.holders.set(h.slot_id, list);
+  // A few committees at a time, and every page of each answer: the database returns at most 1000 rows per request, so one
+  // big request would quietly cut off the rest (and a long list of ids makes the address too long to send at all).
+  for (let i = 0; i < committeeIds.length; i += FACT_CHUNK) {
+    const ids = committeeIds.slice(i, i + FACT_CHUNK);
+    const [slots, payments, holders] = await Promise.all([
+      allRows((from, to) => supabase.from("slots").select("id, committee_id, created_at").in("committee_id", ids).order("created_at").order("id").range(from, to)),
+      allRows((from, to) =>
+        supabase.from("payments_current").select("id, committee_id, slot_id, period, paid_on").in("committee_id", ids).order("period").order("id").range(from, to),
+      ),
+      allRows((from, to) =>
+        supabase
+          .from("slot_holders")
+          .select("slot_id, member_id, from_period, to_period, members(name), slots!inner(committee_id)")
+          .in("slots.committee_id", ids)
+          .order("from_period")
+          .order("slot_id")
+          .order("member_id")
+          .range(from, to),
+      ),
+    ]);
+    if (!slots || !payments || !holders) return null;
+
+    const committeeOfSlot = new Map<string, string>();
+    for (const s of slots) {
+      facts.get(s.committee_id)?.slotIds.push(s.id);
+      committeeOfSlot.set(s.id, s.committee_id);
+    }
+    for (const p of payments) facts.get(p.committee_id)?.paid.push({ slotId: p.slot_id, period: p.period, paidOn: p.paid_on });
+    for (const h of holders) {
+      const f = facts.get(committeeOfSlot.get(h.slot_id) ?? "");
+      if (!f) continue;
+      const member = h.members as unknown as { name: string } | null;
+      const list = f.holders.get(h.slot_id) ?? [];
+      list.push({ memberId: h.member_id, name: member?.name ?? "Unknown", fromPeriod: h.from_period, toPeriod: h.to_period });
+      f.holders.set(h.slot_id, list);
+    }
   }
   return facts;
+}
+
+/** How many committees one request asks about: small enough for a short address and for most answers to fit one page. */
+const FACT_CHUNK = 25;
+const PAGE_ROWS = 1000;
+
+/** Every row of a query, however many: asks page by page until a page comes back short. Null when the database could not be reached. */
+async function allRows<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>): Promise<T[] | null> {
+  const rows: T[] = [];
+  for (let from = 0; ; from += PAGE_ROWS) {
+    const { data, error } = await page(from, from + PAGE_ROWS - 1);
+    if (error) return null;
+    rows.push(...(data ?? []));
+    if ((data ?? []).length < PAGE_ROWS) return rows;
+  }
 }
 
 /** The name of whoever held a slot in a given period. */

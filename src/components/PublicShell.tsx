@@ -11,7 +11,7 @@ export async function PublicShell({ children }: { children: ReactNode }) {
       <div className="iris" aria-hidden="true" style={{ viewTransitionName: "ck-iris" }} />
       <div className="pub">
         <header className="pubhead" style={{ viewTransitionName: "ck-pubhead" }}>
-          <Link className="logo" href="/">
+          <Link className="logo" href="/" aria-label={`${site.name}, home`}>
             <i />
             <span className="name">{site.name}</span>
           </Link>

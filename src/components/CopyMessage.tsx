@@ -10,7 +10,7 @@ export function CopyMessage({ text, who }: { text: string; who: string }) {
     <button
       className="btn secondary small"
       type="button"
-      aria-label={`Copy the message for ${who}`}
+      aria-label={`Copy message for ${who}`}
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(text);

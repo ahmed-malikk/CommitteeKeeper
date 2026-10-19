@@ -19,7 +19,7 @@ test.describe("daily summary and WhatsApp messages (US-16)", () => {
     const text = await first.locator(".msg").innerText();
     expect(text.includes("Ali") !== text.includes("مریم")).toBe(true);
     // No phone saved yet, so the way to send it is to copy it.
-    await expect(first.getByRole("button", { name: /Copy the message for/ })).toBeVisible();
+    await expect(first.getByRole("button", { name: /Copy message for/ })).toBeVisible();
     await expect(page.getByRole("heading", { name: /^Due today/ })).toBeVisible();
   });
 

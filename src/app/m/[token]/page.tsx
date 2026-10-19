@@ -19,7 +19,18 @@ export default async function MemberPage({ params }: { params: Promise<{ token: 
   // member_view is the only door: it returns this member's own information, or an empty answer for any link that does not work.
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("member_view", { p_token: token });
-  const view = error ? null : parseMemberView(data);
+  // A database that can't be reached is not a link that doesn't work: say so, instead of telling the member their link is dead.
+  if (error) {
+    return (
+      <PublicShell>
+        <div className="prose" style={{ paddingTop: 24 }}>
+          <h1>We couldn&rsquo;t load this page</h1>
+          <p className="mut">Check your connection and refresh. Your link is fine.</p>
+        </div>
+      </PublicShell>
+    );
+  }
+  const view = parseMemberView(data);
   if (!view) notFound();
 
   // Is this link already part of the signed-in account? (member_home lists only that account's own memberships.)
