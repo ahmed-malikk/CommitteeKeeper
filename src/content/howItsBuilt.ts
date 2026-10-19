@@ -6,8 +6,8 @@ export const REPO = "https://github.com/ahmed-malikk/CommitteeKeeper";
 /** Real numbers from the last full run. Update them from the test output, never by guessing. */
 export const TESTS = {
   unit: 189,
-  system: 354,
-  browsers: "counted once in each of desktop Edge, desktop Chrome and a 375 px phone view",
+  system: 223,
+  browsers: "runs counted across desktop Chrome, desktop Edge for the core flows, and a 375 px phone view for layout, touch and accessibility",
   asOf: "19 October 2026",
 };
 
@@ -65,7 +65,7 @@ export const ARCHITECTURE = {
 export const TESTING = {
   heading: "How it is tested",
   paragraphs: [
-    "Unit tests cover the rules. System tests drive the real screens in desktop Edge, desktop Chrome and a 375 px phone view, and are run again against the live site after each deploy. A security script acts as each role (signed out, another organiser, a member) and checks what each can and cannot read or change.",
+    "Unit tests cover the rules. System tests drive the real screens: every test in desktop Chrome, the core flows again in desktop Edge, and the layout, touch and accessibility checks in a 375 px phone view. Test data is made through the database so the suite stays fast, and a short smoke set is run against the live site after each deploy. A security script acts as each role (signed out, another organiser, a member) and checks what each can and cannot read or change.",
     "Defects found by testing were fixed in their own commits. The history of what was found and fixed is in the repository.",
   ],
 };
