@@ -6,7 +6,7 @@ export const REPO = "https://github.com/ahmed-malikk/CommitteeKeeper";
 /** Real numbers from the last full run. Update them from the test output, never by guessing. */
 export const TESTS = {
   unit: 189,
-  system: 308,
+  system: 309,
   browsers: "counted once in each of desktop Edge, desktop Chrome and a 375 px phone view",
   asOf: "19 October 2026",
 };
