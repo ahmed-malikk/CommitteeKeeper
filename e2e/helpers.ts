@@ -6,6 +6,8 @@ import { createClient } from "@supabase/supabase-js";
 export const ORGANISER_STATE = "playwright/.auth/organiser.json";
 // A brand-new account with no committees, for tests that look at the empty state.
 export const EMPTY_STATE = "playwright/.auth/empty-organiser.json";
+/** A second new organiser every run, for the tests that look at the list of committees (the main test account has hundreds by now, which would make that screen slow). */
+export const LISTS_STATE = "playwright/.auth/lists-organiser.json";
 export const SIGNED_OUT = { cookies: [], origins: [] };
 
 export const login = {

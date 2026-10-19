@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
-import { ORGANISER_STATE, hasLogin } from "./helpers";
+import { LISTS_STATE, hasLogin } from "./helpers";
 
-test.use({ storageState: ORGANISER_STATE });
+test.use({ storageState: LISTS_STATE });
 test.skip(!hasLogin, "needs the test login");
 
 const next = (page: Page) => page.getByRole("button", { name: "Next" }).click();

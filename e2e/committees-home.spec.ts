@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { ORGANISER_STATE, addMembers, createCommittee, hasLogin, startCommitteeOnPage } from "./helpers";
+import { LISTS_STATE, addMembers, createCommittee, hasLogin, startCommitteeOnPage } from "./helpers";
 
-test.use({ storageState: ORGANISER_STATE });
+test.use({ storageState: LISTS_STATE });
 test.skip(!hasLogin, "needs the test login");
 
 test.describe("the organiser's home screen (US-22)", () => {
