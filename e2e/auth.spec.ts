@@ -6,7 +6,7 @@ const isPhone = () => test.info().project.name === "phone-375";
 test.describe("signed out", () => {
   test.use({ storageState: SIGNED_OUT });
 
-  test("the sign-in page asks for email and password", async ({ page }) => {
+  test("the sign-in page asks for email and password", { tag: "@smoke" }, async ({ page }) => {
     await page.goto("/sign-in");
     await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
     await expect(page.getByLabel("Email")).toBeVisible();
@@ -57,7 +57,7 @@ test.describe("signed out", () => {
     await expect(page.getByRole("heading", { name: "No committees yet" })).toBeVisible();
   });
 
-  test("signing in, then signing out, ends this browser's session (TC-004)", async ({ page }) => {
+  test("signing in, then signing out, ends this browser's session (TC-004)", { tag: "@smoke" }, async ({ page }) => {
     test.skip(!hasLogin, "needs the test login");
     await signInThroughTheForm(page);
     if (!isPhone()) await expect(page.locator(".rail .who")).toHaveText(login.email);

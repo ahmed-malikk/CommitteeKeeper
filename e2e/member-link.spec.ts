@@ -16,7 +16,7 @@ async function asStranger(browser: Browser, testInfo: TestInfo, path: string) {
 }
 
 test.describe("a private link for each member (US-17)", () => {
-  test("the link opens that member's page for a stranger, and shows nobody else's details (FR-15)", async ({ page, browser }, testInfo) => {
+  test("the link opens that member's page for a stranger, and shows nobody else's details (FR-15)", { tag: "@smoke" }, async ({ page, browser }, testInfo) => {
     test.setTimeout(300_000);
     const { url } = await runningByHand(page, ["Ali", "مریم خان"]);
     const committeeId = url.split("/").pop() as string;
@@ -39,7 +39,7 @@ test.describe("a private link for each member (US-17)", () => {
     expect(seen.text).not.toContain(token);
   });
 
-  test("a wrong link, an unknown link and a switched-off link all give the same empty answer (FR-15, TC-047)", async ({ page, browser }, testInfo) => {
+  test("a wrong link, an unknown link and a switched-off link all give the same empty answer (FR-15, TC-047)", { tag: "@smoke" }, async ({ page, browser }, testInfo) => {
     test.setTimeout(300_000);
     const { url } = await runningByHand(page, ["Ali", "مریم خان"]);
     await page.goto(`${url}/members`);

@@ -34,7 +34,7 @@ test.describe("new committee", () => {
     await expect(page.getByRole("heading", { name: "How are the turns decided?" })).toBeVisible();
   });
 
-  test("an organiser creates a committee and sees its agreement, in lakh style (TC-006, TC-007)", async ({ page }) => {
+  test("an organiser creates a committee and sees its agreement, in lakh style (TC-006, TC-007)", { tag: "@smoke" }, async ({ page }) => {
     test.setTimeout(90_000);
     const name = `کمیٹی ${Date.now()} ${"طویل نام ".repeat(5)}`.trim();
     await page.goto("/committees/new");

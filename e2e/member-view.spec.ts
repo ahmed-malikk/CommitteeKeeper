@@ -19,7 +19,7 @@ async function asStranger(browser: Browser, testInfo: TestInfo, path: string) {
 
 // Two members, two periods, Rs 1,000 a month, running since January 2026. The order is مریم خان first, then Ali.
 test.describe("the member's own view (US-18, US-21)", () => {
-  test("shows my own turn, the months left and the status, and nobody else by default (FR-16, FR-19)", async ({ page, browser }, testInfo) => {
+  test("shows my own turn, the months left and the status, and nobody else by default (FR-16, FR-19)", { tag: "@smoke" }, async ({ page, browser }, testInfo) => {
     test.setTimeout(300_000);
     const { url } = await runningByHand(page, ["Ali", "مریم خان"]);
     const committeeId = url.split("/").pop() as string;

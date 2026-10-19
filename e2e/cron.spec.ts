@@ -6,7 +6,7 @@ const secret = process.env.CRON_SECRET ?? "";
 const remote = Boolean(process.env.E2E_BASE_URL);
 
 test.describe("the daily job (US-16)", () => {
-  test("is refused without its secret, and with a wrong one (TC-043)", async ({ request }) => {
+  test("is refused without its secret, and with a wrong one (TC-043)", { tag: "@smoke" }, async ({ request }) => {
     const none = await request.get("/api/cron/daily");
     expect([401, 503]).toContain(none.status());
     if (secret) expect(none.status()).toBe(401);

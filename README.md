@@ -23,10 +23,18 @@ Copy `.env.example` to `.env.local` and fill in the Supabase values when a featu
 npm run typecheck  # TypeScript
 npm test           # unit tests (Vitest)
 npm run build      # production build
-npm run test:e2e   # builds, then system tests (Playwright: desktop Edge, desktop Chrome, 375 px phone)
+npm run test:e2e   # builds, then every system test (Playwright; see below)
+npm run test:smoke # the short post-deploy set (about 17 tests): E2E_BASE_URL=https://your-site npm run test:smoke
 ```
 
 Every push runs the type check, unit tests and build on GitHub Actions.
+
+### How the system tests are organised
+
+- **Each test runs where it matters.** Every test runs in desktop Chrome. Edge is Chromium too, so it re-runs only the core flows (accounts, committees, members, payments, links, history, privacy, accessibility) as a cross-check. The 375 px phone view runs the layout, touch and accessibility checks, the things a phone can actually break.
+- **Setup is seeded through the database.** A test that only needs a committee to exist (running, with members, with a payment) creates it through the same database functions the screens call, in about a second. Tests that are about the guided flow itself (creating a committee, adding a member, starting) still click through it.
+- **A short smoke set** (tests tagged `@smoke`) proves the app works after a deploy; the full set runs before a release. `E2E_WORKERS=2` runs files in parallel (only on a fast machine: three workers starved this laptop), `E2E_RETRIES=1` retries a failed test once.
+- An accessibility scan (axe-core, WCAG 2.2 AA) covers every main screen.
 
 ## The history, and what its check proves
 

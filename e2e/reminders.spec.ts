@@ -6,7 +6,7 @@ test.skip(!hasLogin, "needs the test login");
 
 // A committee that began in January 2026 with 2 periods, nothing recorded: every instalment is long late.
 test.describe("daily summary and WhatsApp messages (US-16)", () => {
-  test("the Reminders tab lists who is late, with one prepared message each and no other member's name (FR-14)", async ({ page }) => {
+  test("the Reminders tab lists who is late, with one prepared message each and no other member's name (FR-14)", { tag: "@smoke" }, async ({ page }) => {
     test.setTimeout(300_000);
     const { url } = await runningByHand(page, ["Ali", "مریم خان"]);
     await page.goto(`${url}/reminders`);

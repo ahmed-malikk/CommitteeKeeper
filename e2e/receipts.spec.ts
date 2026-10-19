@@ -21,7 +21,7 @@ async function withPayment(page: import("@playwright/test").Page, image?: { name
 }
 
 test.describe("receipt images (US-8)", () => {
-  test("attach with the payment, keep a fingerprint in the history, open it privately, then remove it (FR-8, P5)", async ({ page, browser }) => {
+  test("attach with the payment, keep a fingerprint in the history, open it privately, then remove it (FR-8, P5)", { tag: "@smoke" }, async ({ page, browser }) => {
     test.setTimeout(300_000);
     const { url, committeeId } = await withPayment(page, { name: "easypaisa-screenshot.png", buffer: makePng(200, 120) });
     await expect(page.getByText("1 receipt attached.")).toBeVisible({ timeout: 30_000 });

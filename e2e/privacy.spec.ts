@@ -4,7 +4,7 @@ import { ORGANISER_STATE, SIGNED_OUT, hasLogin, runningByHand, tokenOf } from ".
 test.describe("the privacy page (US-23)", () => {
   test.use({ storageState: SIGNED_OUT });
 
-  test("says what is stored, who can see it, and what permanent means for deletion (FR-21)", async ({ page }) => {
+  test("says what is stored, who can see it, and what permanent means for deletion (FR-21)", { tag: "@smoke" }, async ({ page }) => {
     await page.goto("/privacy");
     await expect(page.getByRole("heading", { level: 1, name: "Privacy" })).toBeVisible();
     for (const heading of ["What is stored", "Who can see it", "Why the history is permanent", "What this means for deleting things"]) {

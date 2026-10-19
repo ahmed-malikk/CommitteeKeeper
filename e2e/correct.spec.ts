@@ -20,7 +20,7 @@ async function withPaymentFor(page: Page, name: string) {
 }
 
 test.describe("correcting a payment (US-13)", () => {
-  test("a correction is a new entry that points to the original; both stay (FR-13, TC-040)", async ({ page }) => {
+  test("a correction is a new entry that points to the original; both stay (FR-13, TC-040)", { tag: "@smoke" }, async ({ page }) => {
     test.setTimeout(300_000);
     const url = await withPaymentFor(page, "Ali");
     const row = page.locator(".li", { hasText: "Paid 12 Jan 2026" });

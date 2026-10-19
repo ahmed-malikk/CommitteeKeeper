@@ -5,7 +5,7 @@ test.use({ storageState: ORGANISER_STATE });
 test.skip(!hasLogin, "needs the test login");
 
 test.describe("the history and its chain check (US-14)", () => {
-  test("every entry shows its number, who, when, details and fingerprint; a correction points to its original; the chain is intact (FR-13, TC-042)", async ({ page }) => {
+  test("every entry shows its number, who, when, details and fingerprint; a correction points to its original; the chain is intact (FR-13, TC-042)", { tag: "@smoke" }, async ({ page }) => {
     test.setTimeout(300_000);
     const { url } = await runningByHand(page, ["Ali", "مریم خان"]);
 

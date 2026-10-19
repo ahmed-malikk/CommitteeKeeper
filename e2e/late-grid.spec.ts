@@ -6,7 +6,7 @@ test.skip(!hasLogin, "needs the test login");
 
 // A committee that began in January 2026 with 2 periods and 2 slots, nothing recorded: 4 instalments are late.
 test.describe("late list and payment grid (US-9)", () => {
-  test("the late list, the grid and the home screen agree, and the longest-late come first (FR-9, TC-030, TC-031)", async ({ page }) => {
+  test("the late list, the grid and the home screen agree, and the longest-late come first (FR-9, TC-030, TC-031)", { tag: "@smoke" }, async ({ page }) => {
     test.setTimeout(300_000);
     const { url } = await runningByHand(page, ["Ali", "مریم خان"]);
     await page.goto(`${url}/payments`);

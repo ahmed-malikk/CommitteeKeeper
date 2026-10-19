@@ -9,7 +9,7 @@ const pakistanDay = (plus = 0) => new Date(Date.now() + 5 * 3_600_000 + plus * 8
 
 // Two members, two periods, Rs 1,000 a month: each pot is Rs 2,000. The turn order is مریم خان first, then Ali.
 test.describe("recording a payout (US-12)", () => {
-  test("pick a turn, see who gets what, confirm; the turn is locked and cannot be paid out twice (FR-12, TC-038)", async ({ page }) => {
+  test("pick a turn, see who gets what, confirm; the turn is locked and cannot be paid out twice (FR-12, TC-038)", { tag: "@smoke" }, async ({ page }) => {
     test.setTimeout(300_000);
     const { url } = await runningByHand(page, ["Ali", "مریم خان"]);
     await page.goto(`${url}/turns`);

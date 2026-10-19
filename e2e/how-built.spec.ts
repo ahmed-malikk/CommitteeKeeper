@@ -4,7 +4,7 @@ import { SIGNED_OUT } from "./helpers";
 test.use({ storageState: SIGNED_OUT });
 
 test.describe("the How it's built page (US-24)", () => {
-  test("covers who, the story, the problem, the stack, the architecture, the tests, the links and the credits (FR-22)", async ({ page }) => {
+  test("covers who, the story, the problem, the stack, the architecture, the tests, the links and the credits (FR-22)", { tag: "@smoke" }, async ({ page }) => {
     await page.goto("/how-its-built");
     await expect(page.getByRole("heading", { level: 1, name: "How it’s built" })).toBeVisible();
     for (const name of ["Who built it", "The story", "The problem", "The stack", "How it fits together", "How it is tested", "Links", "Credits"]) {
