@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { HOME_PATH, SIGN_IN_PATH, isAuthPage, needsSignIn } from "@/lib/access";
+import { HOME_PATH, SIGN_IN_PATH, isAuthPage, needsSignIn, safeNext } from "@/lib/access";
 
 /**
  * Runs before every page. Two jobs:
@@ -32,7 +32,10 @@ export async function proxy(request: NextRequest) {
 
   const redirectTo = !signedIn && needsSignIn(path) ? SIGN_IN_PATH : signedIn && isAuthPage(path) ? HOME_PATH : null;
   if (redirectTo) {
-    const redirect = NextResponse.redirect(new URL(redirectTo, request.url));
+    const target = new URL(redirectTo, request.url);
+    // A member who opened /me while signed out comes back to it after signing in.
+    if (redirectTo === SIGN_IN_PATH && safeNext(path)) target.searchParams.set("next", path);
+    const redirect = NextResponse.redirect(target);
     for (const cookie of response.cookies.getAll()) redirect.cookies.set(cookie);
     return redirect;
   }

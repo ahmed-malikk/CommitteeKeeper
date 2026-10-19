@@ -449,3 +449,8 @@ label.btn[aria-disabled="true"] { opacity: .6; pointer-events: none; }
 /* ── The member's payments and receipts (#24) ─────────────────────────────── */
 .mreceipts { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 4px; }
 .mreceipts a { display: inline-flex; align-items: center; gap: 6px; color: var(--tealink); font-weight: 600; min-height: 32px; }
+
+/* ── Optional member account (#23) ────────────────────────────────────────── */
+.maccount { padding-top: 6px; border-top: 1px solid var(--line2); }
+.maccount form { margin-top: 6px; }
+@media print { .maccount { display: none !important; } }

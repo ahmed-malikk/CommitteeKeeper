@@ -9,12 +9,13 @@ import { ErrorNote } from "./states";
 const initialState: AuthState = { error: null, fields: {}, notice: null };
 
 /** The sign-in and sign-up form: one component, two modes, so the two pages cannot drift apart. */
-export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
+export function AuthForm({ mode, next }: { mode: "sign-in" | "sign-up"; next?: string | null }) {
   const up = mode === "sign-up";
   const [state, action, pending] = useActionState(up ? signUp : signIn, initialState);
 
   return (
     <form action={action} noValidate>
+      {next ? <input type="hidden" name="next" value={next} /> : null}
       {state.error ? (
         <div style={{ marginBottom: 16 }}>
           <ErrorNote>{state.error}</ErrorNote>
@@ -74,11 +75,11 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
       <p className="sm mut" style={{ marginTop: 16 }}>
         {up ? (
           <>
-            Already have an account? <Link href="/sign-in">Sign in</Link>. Have a link from your organiser? Open it: no account needed.
+            Already have an account? <Link href={next ? `/sign-in?next=${encodeURIComponent(next)}` : "/sign-in"}>Sign in</Link>. Have a link from your organiser? Open it: no account needed.
           </>
         ) : (
           <>
-            New here? <Link href="/sign-up">Create an account</Link>
+            New here? <Link href={next ? `/sign-up?next=${encodeURIComponent(next)}` : "/sign-up"}>Create an account</Link>
           </>
         )}
       </p>

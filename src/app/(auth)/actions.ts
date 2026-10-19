@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import type { AuthError } from "@supabase/supabase-js";
-import { HOME_PATH } from "@/lib/access";
+import { HOME_PATH, safeNext } from "@/lib/access";
 import { validateCredentials, type CredentialProblems } from "@/lib/credentials";
 import { createClient } from "@/lib/supabase/server";
 
@@ -45,7 +45,7 @@ export async function signIn(_previous: AuthState, formData: FormData): Promise<
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { error: signInError(error), fields: {}, notice: null };
-  redirect(HOME_PATH);
+  redirect(safeNext(formData.get("next")) ?? HOME_PATH);
 }
 
 /** Runs on the server when the sign-up form is submitted. */
@@ -61,7 +61,7 @@ export async function signUp(_previous: AuthState, formData: FormData): Promise<
   if (!data.session) {
     return { error: null, fields: {}, notice: "Check your email: we sent a link to confirm your account. Then sign in." };
   }
-  redirect(HOME_PATH);
+  redirect(safeNext(formData.get("next")) ?? HOME_PATH);
 }
 
 export async function signOut() {

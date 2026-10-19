@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAuthPage, needsSignIn } from "./access";
+import { isAuthPage, needsSignIn, safeNext } from "./access";
 
 describe("needsSignIn", () => {
   it("protects the committees pages and everything under them", () => {
@@ -29,5 +29,22 @@ describe("isAuthPage", () => {
     expect(isAuthPage("/")).toBe(false);
     expect(isAuthPage("/committees")).toBe(false);
     expect(isAuthPage("/sign-inn")).toBe(false);
+  });
+});
+
+describe("safeNext", () => {
+  const token = "A".repeat(43);
+  it("allows only a member page or the member home", () => {
+    expect(safeNext(`/m/${token}`)).toBe(`/m/${token}`);
+    expect(safeNext("/me")).toBe("/me");
+    expect(safeNext("/me/0d3b7f0e-1111-4222-8333-444455556666")).toBe("/me/0d3b7f0e-1111-4222-8333-444455556666");
+  });
+  it("refuses anything else, including other sites and organiser pages", () => {
+    for (const bad of ["https://evil.example", "//evil.example", "/committees", "/m/short", `/m/${token}/receipt/x/1`, "/me/../committees", "", null, undefined, 5]) expect(safeNext(bad)).toBeNull();
+  });
+  it("now treats /me as needing a sign-in", () => {
+    expect(needsSignIn("/me")).toBe(true);
+    expect(needsSignIn("/me/abc")).toBe(true);
+    expect(needsSignIn("/m/abc")).toBe(false);
   });
 });

@@ -17,9 +17,14 @@ export async function PublicShell({ children }: { children: ReactNode }) {
           </Link>
           <nav aria-label="Main" style={{ display: "flex", gap: 8, alignItems: "center" }}>
             {user ? (
-              <Link className="btn secondary small" href="/committees">
-                My committees
-              </Link>
+              <>
+                <Link className="btn ghost" href="/me">
+                  As a member
+                </Link>
+                <Link className="btn secondary small" href="/committees">
+                  My committees
+                </Link>
+              </>
             ) : (
               <>
                 <Link className="btn ghost" href="/sign-in">
