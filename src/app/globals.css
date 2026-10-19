@@ -457,3 +457,9 @@ label.btn[aria-disabled="true"] { opacity: .6; pointer-events: none; }
 
 /* ── What members can see (#25) ───────────────────────────────────────────── */
 .sw input[type=checkbox]:disabled { opacity: .6; cursor: not-allowed; }
+
+/* ── Privacy page (#26) ───────────────────────────────────────────────────── */
+.privacy h2 { margin-top: 28px; }
+.privacy h3 { margin: 16px 0 6px; font-size: 1.0625rem; }
+.privacy ul { padding-left: 20px; }
+.privacy li { margin: 6px 0; overflow-wrap: anywhere; }

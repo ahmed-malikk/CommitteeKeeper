@@ -72,6 +72,12 @@ export function AuthForm({ mode, next }: { mode: "sign-in" | "sign-up"; next?: s
         {pending ? (up ? "Creating account…" : "Signing in…") : up ? "Create account" : "Sign in"}
       </button>
 
+      {up ? (
+        <p className="sm mut" style={{ marginTop: 12 }}>
+          What is stored about you, who can see it and why: <Link href="/privacy">read the privacy page</Link>.
+        </p>
+      ) : null}
+
       <p className="sm mut" style={{ marginTop: 16 }}>
         {up ? (
           <>

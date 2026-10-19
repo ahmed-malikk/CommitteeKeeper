@@ -40,6 +40,7 @@ export async function PublicShell({ children }: { children: ReactNode }) {
         <main>{children}</main>
         <footer className="foot">
           <Link href="/how-its-built">How it&rsquo;s built</Link>
+          <Link href="/privacy">Privacy</Link>
           <span>{site.name} only keeps the record. It never holds or moves money.</span>
         </footer>
       </div>

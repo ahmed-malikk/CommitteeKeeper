@@ -80,6 +80,9 @@ export function AppShell({ children, email, title = "My committees", tabs }: { c
           <NavLink href="/how-its-built" icon="list">
             How it&rsquo;s built
           </NavLink>
+          <NavLink href="/privacy" icon="shield">
+            Privacy
+          </NavLink>
           <form action={signOut}>
             <button className="nav" type="submit">
               <Icon name="out" />
@@ -98,6 +101,9 @@ export function AppShell({ children, email, title = "My committees", tabs }: { c
             </Link>
             <Link className="how" href="/how-its-built" aria-label="How it's built">
               <Icon name="list" />
+            </Link>
+            <Link className="how" href="/privacy" aria-label="Privacy">
+              <Icon name="shield" />
             </Link>
             <form action={signOut}>
               <button className="how" type="submit" aria-label="Sign out">
