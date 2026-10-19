@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ORGANISER_STATE, addMembers, createCommittee, hasLogin, organiserDb, payOutAllTurns, runningByHand, startCommitteeOnPage } from "./helpers";
+import { ORGANISER_STATE, hasLogin, organiserDb, payOutAllTurns, runningByHand, seedCommittee, nextMonthStart } from "./helpers";
 
 test.use({ storageState: ORGANISER_STATE });
 test.skip(!hasLogin, "needs the test login");
@@ -7,7 +7,7 @@ test.skip(!hasLogin, "needs the test login");
 test.describe("completing a committee", () => {
   test("a committee that has not started cannot be completed, and says so (TC-017)", async ({ page }) => {
     test.setTimeout(120_000);
-    const url = await createCommittee(page, { periods: 2, order: "Set the order by hand" });
+    const { url } = await seedCommittee({ names: [], periods: 2, method: "hand" });
     await page.goto(url);
     await expect(page.getByText("A committee can only be completed after it has started.")).toBeVisible();
     await expect(page.getByRole("button", { name: "Complete committee" })).toHaveCount(0);
@@ -16,9 +16,8 @@ test.describe("completing a committee", () => {
   test("before the last period is over, the panel says when it ends and the button stays off", async ({ page }) => {
     test.setTimeout(180_000);
     // The default start date is next month, so the last period is far from over.
-    const url = await createCommittee(page, { periods: 2, order: "Draw each month" });
-    await addMembers(page, url, ["Ali", "Sara"]);
-    await startCommitteeOnPage(page, url);
+    const { url } = await seedCommittee({ names: ["Ali", "Sara"], method: "draw_monthly", periods: 2, startDate: nextMonthStart(), start: true });
+    await page.goto(url);
     await expect(page.getByText("The last period is not over yet (last due day")).toBeVisible();
     await expect(page.getByText("2 turn(s) have not been paid out")).toBeVisible();
     await expect(page.getByRole("button", { name: "Complete committee" })).toBeDisabled();

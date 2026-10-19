@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ORGANISER_STATE, addMembers, createCommittee, hasLogin, runningByHand } from "./helpers";
+import { ORGANISER_STATE, hasLogin, runningByHand, seedCommittee } from "./helpers";
 
 test.use({ storageState: ORGANISER_STATE });
 test.skip(!hasLogin, "needs the test login");
@@ -38,8 +38,7 @@ test.describe("swapping two turns", () => {
 
   test("there is no swap form while the committee is still forming", async ({ page }) => {
     test.setTimeout(120_000);
-    const url = await createCommittee(page, { periods: 2, order: "Set the order by hand" });
-    await addMembers(page, url, ["Ali", "Sara"]);
+    const { url } = await seedCommittee({ names: ["Ali", "Sara"], method: "hand", periods: 2 });
     await page.goto(`${url}/turns`);
     await expect(page.getByRole("form", { name: "Swap two turns" })).toHaveCount(0);
   });

@@ -1,5 +1,6 @@
 import { expect, type Page } from "@playwright/test";
-import { createClient } from "@supabase/supabase-js";
+import { readFileSync } from "node:fs";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 // One saved sign-in (made by auth.setup.ts) is reused by every test that needs a signed-in organiser,
 // so the suite does not sign in dozens of times (Supabase limits sign-ins per minute).
@@ -8,6 +9,8 @@ export const ORGANISER_STATE = "playwright/.auth/organiser.json";
 export const EMPTY_STATE = "playwright/.auth/empty-organiser.json";
 /** A second new organiser every run, for the tests that look at the list of committees (the main test account has hundreds by now, which would make that screen slow). */
 export const LISTS_STATE = "playwright/.auth/lists-organiser.json";
+/** The login of that second organiser (written by the setup step), for seeding its data through the database. */
+export const LISTS_LOGIN = "playwright/.auth/lists-login.json";
 export const SIGNED_OUT = { cookies: [], origins: [] };
 
 export const login = {
@@ -63,34 +66,135 @@ export async function startCommitteeOnPage(page: Page, committeeUrl: string) {
   await expect(page.getByText("This committee is running.")).toBeVisible({ timeout: 15_000 });
 }
 
-/** A committee with one member per name (one slot each) and a start date in the past, so it can start as already running. */
-export async function committeeWithMembers(page: Page, o: { order: string; names: string[] }) {
-  const url = await createCommittee(page, { periods: o.names.length, order: o.order, startDate: "2026-01-15" });
-  await addMembers(page, url, o.names);
+/** A committee with one member per name (one slot each) and a start date in the past, so it can start as already running. (Seeded through the database.) */
+export async function committeeWithMembers(_page: Page, o: { order: string; names: string[]; as?: Account }) {
+  const { url } = await seedCommittee({ names: o.names, method: ORDER_BY_LABEL[o.order] ?? "hand", periods: o.names.length, as: o.as });
   return url;
 }
 
 /**
  * A running committee whose order was set by hand: the first name is moved one place later, so the turns run
- * names[1], names[0], names[2], ... Returns the address and that order.
+ * names[1], names[0], names[2], ... Returns the address and that order. (Seeded through the database; the page is not needed.)
  */
-export async function runningByHand(page: Page, names: string[]) {
-  const url = await createCommittee(page, { periods: names.length, order: "Set the order by hand", startDate: "2026-01-15" });
-  await addMembers(page, url, names);
-  await page.goto(`${url}/turns`);
-  await page.getByRole("button", { name: `Move ${names[0]} later` }).click();
-  await page.getByRole("button", { name: "Save order" }).click();
-  await expect(page.getByText("Order saved.")).toBeVisible();
-  await startCommitteeOnPage(page, url);
-  return { url, order: [names[1], names[0], ...names.slice(2)] };
+export async function runningByHand(_page: Page, names: string[], as?: Account) {
+  const { url, order } = await seedCommittee({ names, method: "hand", periods: names.length, start: true, moveFirstLater: true, as });
+  return { url, order };
 }
 
-/** The organiser's own database session, signed in like the app does it (publishable key only; no secret key). */
-export async function organiserDb() {
-  const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "", process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "", { auth: { persistSession: false } });
-  const { error } = await db.auth.signInWithPassword({ email: login.email, password: login.password });
-  if (error) throw new Error(`Could not sign in for the database: ${error.message}`);
-  return db;
+/** Starts a committee through the database (the same function the Start button calls). For tests where starting is only setup. */
+export async function startViaDb(committeeUrl: string, account: Account = "main") {
+  const db = await organiserDb(account);
+  const started = await db.rpc("start_committee", { p_committee_id: committeeUrl.split("/").pop() as string });
+  if (started.error) throw new Error(`seed: start_committee failed: ${started.error.message}`);
+}
+
+/** The first day of next month in Pakistan, which is what a new committee's start date defaults to. */
+export function nextMonthStart(): string {
+  const now = new Date(Date.now() + 5 * 3_600_000);
+  const y = now.getUTCMonth() === 11 ? now.getUTCFullYear() + 1 : now.getUTCFullYear();
+  const m = (now.getUTCMonth() + 1) % 12;
+  return `${y}-${String(m + 1).padStart(2, "0")}-01`;
+}
+
+/** Which test organiser a database session or a seeded committee belongs to: the main account, or the second one used by the list screens. */
+export type Account = "main" | "lists";
+
+/**
+ * An organiser's own database session, signed in like the app does it (publishable key only; no secret key).
+ * Each worker signs in once per account and reuses the session (Supabase limits sign-ins per minute, and most tests seed data).
+ */
+const sessions = new Map<Account, Promise<SupabaseClient>>();
+export function organiserDb(account: Account = "main") {
+  let session = sessions.get(account);
+  if (!session) {
+    session = (async () => {
+      const who = account === "lists" ? (JSON.parse(readFileSync(LISTS_LOGIN, "utf-8")) as { email: string; password: string }) : login;
+      const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "", process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "", { auth: { persistSession: false } });
+      const { error } = await db.auth.signInWithPassword({ email: who.email, password: who.password });
+      if (error) throw new Error(`Could not sign in for the database: ${error.message}`);
+      return db;
+    })();
+    // A failed sign-in is not kept, so the next test can try again.
+    session.catch(() => sessions.delete(account));
+    sessions.set(account, session);
+  }
+  return session;
+}
+
+export type OrderMethod = "hand" | "draw_start" | "draw_monthly";
+/** The turn-order choices as the screens word them, for tests that used to click them. */
+export const ORDER_BY_LABEL: Record<string, OrderMethod> = {
+  "Set the order by hand": "hand",
+  "Draw all turns at the start": "draw_start",
+  "Draw each month": "draw_monthly",
+};
+
+export type Seed = {
+  /** One member per name, in this order. */
+  names: string[];
+  /** How turns are decided. Defaults to by hand. */
+  method?: OrderMethod;
+  /** Number of periods; defaults to one per slot. */
+  periods?: number;
+  /** Slots per member (default 1 each). */
+  slots?: number[];
+  startDate?: string;
+  name?: string;
+  /** Start the committee (it needs every slot given out and, for "by hand", the order saved). */
+  start?: boolean;
+  /** By hand only: move the first name one place later, so turns run names[1], names[0], names[2]... */
+  moveFirstLater?: boolean;
+  /** Whose committee it is. */
+  as?: Account;
+};
+
+/**
+ * Makes a committee straight through the database, as the organiser, in about a second: the same functions the screens call,
+ * so the committee is exactly what clicking through the guided flow would make. Use it whenever creating or starting the
+ * committee is only setup; the tests that are about the guided flow itself still click through it. The address is relative.
+ */
+export async function seedCommittee(o: Seed) {
+  const db = await organiserDb(o.as ?? "main");
+  const slotsPer = o.names.map((_, i) => o.slots?.[i] ?? 1);
+  const periods = o.periods ?? Math.max(2, slotsPer.reduce((a, b) => a + b, 0));
+  const created = await db.rpc("create_committee", {
+    p_name: o.name ?? `E2E ${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    p_amount: 1000,
+    p_periods: periods,
+    p_start_date: o.startDate ?? "2026-01-15",
+    p_due_day: 10,
+    p_grace_days: 0,
+    p_order_method: o.method ?? "hand",
+  });
+  if (created.error) throw new Error(`seed: create_committee failed: ${created.error.message}`);
+  const id = created.data as string;
+
+  const slotIds: string[][] = [];
+  for (let i = 0; i < o.names.length; i++) {
+    const member = await db.rpc("add_member", { p_committee_id: id, p_name: o.names[i] });
+    if (member.error) throw new Error(`seed: add_member failed: ${member.error.message}`);
+    const mine: string[] = [];
+    for (let k = 0; k < slotsPer[i]; k++) {
+      const slot = await db.rpc("add_slot", { p_committee_id: id, p_member_id: member.data as string });
+      if (slot.error) throw new Error(`seed: add_slot failed: ${slot.error.message}`);
+      mine.push(slot.data as string);
+    }
+    slotIds.push(mine);
+  }
+
+  let order = o.names;
+  if ((o.method ?? "hand") === "hand" && o.names.length > 0) {
+    const moved = o.moveFirstLater && o.names.length > 1;
+    const arranged = moved ? [...slotIds.slice(1, 2), slotIds[0], ...slotIds.slice(2)] : slotIds;
+    order = moved ? [o.names[1], o.names[0], ...o.names.slice(2)] : o.names;
+    const saved = await db.rpc("set_order", { p_committee_id: id, p_slot_ids: arranged.flat(), p_reason: null });
+    if (saved.error) throw new Error(`seed: set_order failed: ${saved.error.message}`);
+  }
+  if (o.start) {
+    const started = await db.rpc("start_committee", { p_committee_id: id });
+    if (started.error) throw new Error(`seed: start_committee failed: ${started.error.message}`);
+  }
+  return { url: `/committees/${id}`, id, order };
 }
 
 /** Today in Pakistan (UTC+5), as the database counts it. */

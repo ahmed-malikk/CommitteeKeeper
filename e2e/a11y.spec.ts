@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { LISTS_STATE, ORGANISER_STATE, SIGNED_OUT, hasLogin, organiserDb, runningByHand, tokenOf } from "./helpers";
+import { EMPTY_STATE, LISTS_STATE, ORGANISER_STATE, SIGNED_OUT, hasLogin, organiserDb, runningByHand, tokenOf } from "./helpers";
 
 // An automated accessibility scan (axe-core) of every main screen against WCAG 2.2 AA, at laptop and phone size
 // (the three Playwright projects). It finds what a machine can: contrast, names and labels, roles, landmarks, headings.
@@ -17,7 +17,7 @@ async function scan(page: Page, label: string) {
 test.describe("accessibility scan: public pages", () => {
   test.use({ storageState: SIGNED_OUT });
   for (const path of ["/", "/sign-in", "/sign-up", "/privacy", "/how-its-built", `/m/${"A".repeat(43)}`]) {
-    test(`${path === `/m/${"A".repeat(43)}` ? "a link that does not work" : path}`, async ({ page }) => {
+    test(`${path === `/m/${"A".repeat(43)}` ? "a link that does not work" : path}`, { tag: path === "/" || path === "/sign-in" ? ["@smoke"] : [] }, async ({ page }) => {
       await page.goto(path);
       await expect(page.locator("main")).toBeVisible();
       await scan(page, path);
@@ -76,15 +76,23 @@ test.describe("accessibility scan: the organiser's screens", () => {
   });
 });
 
-test.describe("accessibility scan: the committee list", () => {
-  test.use({ storageState: LISTS_STATE });
+test.describe("accessibility scan: the committee list, empty", () => {
+  // A brand-new organiser, so the list really is empty whatever else ran before.
+  test.use({ storageState: EMPTY_STATE });
 
-  test("home with and without committees", async ({ page }) => {
-    test.setTimeout(300_000);
+  test("home with no committees", async ({ page }) => {
     await page.goto("/committees");
     await expect(page.getByRole("heading", { name: "My committees" })).toBeVisible();
     await scan(page, "home, empty");
-    const { url } = await runningByHand(page, ["Ali", "مریم خان"]);
+  });
+});
+
+test.describe("accessibility scan: the committee list, with a committee", () => {
+  test.use({ storageState: LISTS_STATE });
+
+  test("home with a committee", async ({ page }) => {
+    test.setTimeout(120_000);
+    const { url } = await runningByHand(page, ["Ali", "مریم خان"], "lists");
     expect(url).toContain("/committees/");
     await page.goto("/committees");
     await expect(page.getByRole("region", { name: "All committees" })).toBeVisible();

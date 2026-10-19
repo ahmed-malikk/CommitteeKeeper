@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { ORGANISER_STATE, addMembers, createCommittee, hasLogin } from "./helpers";
+import { ORGANISER_STATE, hasLogin, seedCommittee } from "./helpers";
 
 test.use({ storageState: ORGANISER_STATE });
 test.skip(!hasLogin, "needs the test login");
@@ -12,8 +12,7 @@ async function names(page: Page) {
 test.describe("turn order by hand", () => {
   test("arrange, save with a reason, and the order is still there after a reload (FR-4)", async ({ page }) => {
     test.setTimeout(120_000);
-    const url = await createCommittee(page, { periods: 3, order: "Set the order by hand" });
-    await addMembers(page, url, ["Ali", "Sara", "مریم خان"]);
+    const { url } = await seedCommittee({ names: ["Ali", "Sara", "مریم خان"], method: "hand", periods: 3 });
 
     await page.goto(`${url}/turns`);
     await expect(page.getByRole("heading", { name: "Turn order" })).toBeVisible();
@@ -52,7 +51,7 @@ test.describe("turn order by hand", () => {
 
   test("a committee with turns drawn instead shows the order but no hand editor", async ({ page }) => {
     test.setTimeout(90_000);
-    const url = await createCommittee(page, { periods: 2, order: "Draw all turns at the start" });
+    const { url } = await seedCommittee({ names: [], periods: 2, method: "draw_start" });
     await page.goto(`${url}/turns`);
     await expect(page.getByText("Turns are decided by:")).toBeVisible();
     await expect(page.getByRole("form", { name: "Arrange the turns" })).toHaveCount(0);
@@ -60,8 +59,7 @@ test.describe("turn order by hand", () => {
 
   test("the turns page fits a 375 px phone without sideways scrolling", async ({ page }) => {
     test.setTimeout(120_000);
-    const url = await createCommittee(page, { periods: 2, order: "Set the order by hand" });
-    await addMembers(page, url, ["Abdul Rehman Muhammad Ibrahim Khan Niazi Sahib Ji", "Sara"]);
+    const { url } = await seedCommittee({ names: ["Abdul Rehman Muhammad Ibrahim Khan Niazi Sahib Ji", "Sara"], method: "hand", periods: 2 });
     await page.goto(`${url}/turns`);
     await expect(page.getByRole("button", { name: /^Move .* later$/ }).first()).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

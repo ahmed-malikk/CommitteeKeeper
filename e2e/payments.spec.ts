@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { ORGANISER_STATE, hasLogin, organiserDb, runningByHand } from "./helpers";
+import { ORGANISER_STATE, hasLogin, organiserDb, runningByHand, seedCommittee } from "./helpers";
 
 test.use({ storageState: ORGANISER_STATE });
 test.skip(!hasLogin, "needs the test login");
@@ -15,7 +15,7 @@ async function running(page: Page) {
 }
 
 test.describe("recording a payment (US-7)", () => {
-  test("record the full instalment from a row, and the row shows it paid (FR-7)", async ({ page }, testInfo) => {
+  test("record the full instalment from a row, and the row shows it paid (FR-7)", { tag: "@smoke" }, async ({ page }, testInfo) => {
     test.setTimeout(240_000);
     const url = await running(page);
     await expect(page.getByRole("heading", { name: /Feb 2026/ })).toBeVisible();
@@ -114,8 +114,7 @@ test.describe("recording a payment (US-7)", () => {
 
   test("a committee that has not started has no payments yet", async ({ page }) => {
     test.setTimeout(120_000);
-    const { createCommittee } = await import("./helpers");
-    const url = await createCommittee(page, { periods: 2, order: "Draw each month" });
+    const { url } = await seedCommittee({ names: [], periods: 2, method: "draw_monthly" });
     await page.goto(`${url}/payments`);
     await expect(page.getByRole("heading", { name: "This committee has not started" })).toBeVisible();
     await expect(page.getByRole("form", { name: "Record a payment" })).toHaveCount(0);

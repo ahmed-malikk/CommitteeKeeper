@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ORGANISER_STATE, committeeWithMembers, createCommittee, addMembers, hasLogin, startCommitteeOnPage } from "./helpers";
+import { ORGANISER_STATE, committeeWithMembers, hasLogin, seedCommittee, startViaDb } from "./helpers";
 
 test.use({ storageState: ORGANISER_STATE });
 test.skip(!hasLogin, "needs the test login");
@@ -7,8 +7,7 @@ test.skip(!hasLogin, "needs the test login");
 test.describe("draws", () => {
   test("a start draw gives every turn one place, and a redo keeps the first result in the history (FR-4)", async ({ page }) => {
     test.setTimeout(150_000);
-    const url = await createCommittee(page, { periods: 3, order: "Draw all turns at the start" });
-    await addMembers(page, url, ["Ali", "Sara", "Hira"]);
+    const { url } = await seedCommittee({ names: ["Ali", "Sara", "Hira"], method: "draw_start", periods: 3 });
     await page.goto(`${url}/turns`);
 
     // Nothing is drawn yet: no places, no history.
@@ -42,7 +41,7 @@ test.describe("draws", () => {
     await page.goto(`${url}/turns`);
     await expect(page.getByText("The drawing starts once the committee is running.")).toBeVisible();
 
-    await startCommitteeOnPage(page, url);
+    await startViaDb(url);
     await page.goto(`${url}/turns`);
     await page.getByRole("button", { name: "Draw the next turn" }).click();
     await expect(page.getByText("Drawn. The result is in the history below.")).toBeVisible();
@@ -84,7 +83,7 @@ test.describe("draws", () => {
     await page.getByRole("form", { name: "Change how turns are decided" }).getByRole("button", { name: "Save" }).click();
     await expect(page.getByText("Turns are decided by:")).toContainText("Draw each month");
 
-    await startCommitteeOnPage(page, url);
+    await startViaDb(url);
     await page.goto(`${url}/turns`);
     await page.getByText("Change how turns are decided").click();
     const running = page.getByRole("form", { name: "Change how turns are decided" });

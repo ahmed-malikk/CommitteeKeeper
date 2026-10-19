@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { ORGANISER_STATE, addMembers, createCommittee, hasLogin, runningByHand, startCommitteeOnPage } from "./helpers";
+import { ORGANISER_STATE, hasLogin, runningByHand, seedCommittee } from "./helpers";
 
 test.use({ storageState: ORGANISER_STATE });
 test.skip(!hasLogin, "needs the test login");
@@ -42,22 +42,10 @@ test.describe("a member leaves and a replacement takes over", () => {
 
   test("a member with two slots hands over only one of them", async ({ page }) => {
     test.setTimeout(240_000);
-    const url = await createCommittee(page, { periods: 3, order: "Set the order by hand", startDate: "2026-01-15" });
+    // Ali holds two slots and Sara one, so 3 periods; Ali's turns are moved later, then it starts.
+    const { url } = await seedCommittee({ names: ["Ali", "Sara"], slots: [2, 1], method: "hand", periods: 3, start: true, moveFirstLater: true });
     await page.goto(`${url}/members`);
-    const add = page.getByRole("form", { name: "Add a member" });
-    await add.getByLabel("Name").fill("Ali");
-    await add.getByLabel("Slots").fill("2");
-    await add.getByRole("button", { name: "Add member" }).click();
     await expect(page.getByText("2 slots · owes Rs 2,000 each period")).toBeVisible();
-    await addMembers(page, url, ["Sara"]);
-
-    await page.goto(`${url}/turns`);
-    await page.getByRole("button", { name: "Move Ali later" }).first().click();
-    await page.getByRole("button", { name: "Save order" }).click();
-    await expect(page.getByText("Order saved.")).toBeVisible();
-    await startCommitteeOnPage(page, url);
-
-    await page.goto(`${url}/members`);
     const form = page.getByRole("form", { name: "A member leaves" });
     await form.getByLabel("Slot that changes hands").selectOption({ label: "Ali · slot 2" });
     await form.getByLabel("Replacement").selectOption({ label: "A new person…" });
@@ -91,8 +79,7 @@ test.describe("a member leaves and a replacement takes over", () => {
 
   test("there is no leaver form while the committee is still forming", async ({ page }) => {
     test.setTimeout(120_000);
-    const url = await createCommittee(page, { periods: 2, order: "Set the order by hand" });
-    await addMembers(page, url, ["Ali", "Sara"]);
+    const { url } = await seedCommittee({ names: ["Ali", "Sara"], method: "hand", periods: 2 });
     await page.goto(`${url}/members`);
     await expect(page.getByRole("form", { name: "A member leaves" })).toHaveCount(0);
   });

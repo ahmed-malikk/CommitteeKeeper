@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { LISTS_STATE, addMembers, createCommittee, hasLogin, startCommitteeOnPage } from "./helpers";
+import { LISTS_STATE, hasLogin, seedCommittee } from "./helpers";
 
 test.use({ storageState: LISTS_STATE });
 test.skip(!hasLogin, "needs the test login");
@@ -9,13 +9,7 @@ test.describe("the organiser's home screen (US-22)", () => {
     test.setTimeout(180_000);
     const name = `Home ${Date.now()}`;
     // Began in January 2026 with 2 periods and nothing recorded: 2 slots x 2 periods = 4 late instalments.
-    const url = await createCommittee(page, { periods: 2, order: "Set the order by hand", startDate: "2026-01-15", name });
-    await addMembers(page, url, ["Ali", "مریم خان"]);
-    await page.goto(`${url}/turns`);
-    await page.getByRole("button", { name: "Move Ali later" }).click();
-    await page.getByRole("button", { name: "Save order" }).click();
-    await expect(page.getByText("Order saved.")).toBeVisible();
-    await startCommitteeOnPage(page, url);
+    await seedCommittee({ names: ["Ali", "مریم خان"], method: "hand", periods: 2, startDate: "2026-01-15", name, start: true, moveFirstLater: true, as: "lists" });
 
     await page.goto("/committees");
     const row = page.getByRole("region", { name: "All committees" }).getByRole("link", { name: new RegExp(name) });
@@ -32,7 +26,7 @@ test.describe("the organiser's home screen (US-22)", () => {
   test("a committee that has not started shows no late count", async ({ page }) => {
     test.setTimeout(120_000);
     const name = `Forming ${Date.now()}`;
-    await createCommittee(page, { periods: 2, order: "Draw each month", name });
+    await seedCommittee({ names: [], periods: 2, method: "draw_monthly", name, as: "lists" });
     await page.goto("/committees");
     const row = page.getByRole("region", { name: "All committees" }).getByRole("link", { name: new RegExp(name) });
     await expect(row).toContainText("Forming");
@@ -43,7 +37,7 @@ test.describe("the organiser's home screen (US-22)", () => {
     test.setTimeout(120_000);
     const stamp = Date.now();
     const name = `بہت لمبا نام والی کمیٹی ${stamp} Very Long Name For The Area`;
-    await createCommittee(page, { periods: 2, order: "Draw each month", name });
+    await seedCommittee({ names: [], periods: 2, method: "draw_monthly", name, as: "lists" });
     await page.goto("/committees");
     await expect(page.getByRole("link", { name: new RegExp(String(stamp)) })).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

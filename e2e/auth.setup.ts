@@ -1,5 +1,6 @@
 import { test as setup } from "@playwright/test";
-import { EMPTY_STATE, LISTS_STATE, ORGANISER_STATE, hasLogin, signInThroughTheForm } from "./helpers";
+import { writeFileSync } from "node:fs";
+import { EMPTY_STATE, LISTS_LOGIN, LISTS_STATE, ORGANISER_STATE, hasLogin, signInThroughTheForm } from "./helpers";
 
 // Signs in once and saves the session for the other tests to reuse.
 setup("sign in as the test organiser", async ({ page }) => {
@@ -21,9 +22,12 @@ setup("sign up a fresh organiser with no committees", async ({ page }) => {
 // Another new account every run, for the tests that create committees and then look at the list of them.
 setup("sign up a fresh organiser for the committee list tests", async ({ page }) => {
   await page.goto("/sign-up");
-  await page.getByLabel("Email").fill(`ck-e2e-lists-${Date.now()}@example.test`);
+  const email = `ck-e2e-lists-${Date.now()}@example.test`;
+  await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill("a-long-test-password-1");
   await page.getByRole("button", { name: "Create account" }).click();
   await page.waitForURL(/\/committees$/);
   await page.context().storageState({ path: LISTS_STATE });
+  // Tests that seed data for this account through the database need its login (the saved browser session has none).
+  writeFileSync(LISTS_LOGIN, JSON.stringify({ email, password: "a-long-test-password-1" }));
 });
