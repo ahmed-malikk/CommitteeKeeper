@@ -1,5 +1,6 @@
 "use client";
 
+import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { newMemberLink, setMemberLink } from "@/app/(app)/committees/[id]/members/actions";
 import { Icon } from "./Icon";
@@ -20,7 +21,14 @@ export function MemberLink({ committeeId, memberId, name, token, enabled }: Prop
   const [pending, start] = useTransition();
   const { box, trigger } = useConfirmFocus(asking);
   const field = useRef<HTMLInputElement>(null);
+  const qr = useRef<HTMLDialogElement>(null);
+  const [qrOpen, setQrOpen] = useState(false);
+  const qrButton = useRef<HTMLButtonElement>(null);
   useEffect(() => setOrigin(window.location.origin), []);
+  // The QR code is only drawn while its dialog is open, so a page of many members is not full of hidden codes.
+  useEffect(() => {
+    if (qrOpen) qr.current?.showModal();
+  }, [qrOpen]);
   const url = `${origin}/m/${token}`;
 
   async function copy() {
@@ -50,9 +58,13 @@ export function MemberLink({ committeeId, memberId, name, token, enabled }: Prop
         {enabled ? (
           <>
             <input ref={field} className="input mlinkurl" readOnly value={url} aria-label={`Link for ${name}`} onFocus={(e) => e.currentTarget.select()} />
-            <button className="btn secondary small" type="button" onClick={copy} aria-label={`Copy the link for ${name}`}>
+            <button className="btn secondary small" type="button" onClick={copy} aria-label={`Copy link for ${name}`}>
               <Icon name={copied ? "check" : "list"} />
               {copied ? "Copied" : "Copy link"}
+            </button>
+            <button className="btn secondary small" type="button" ref={qrButton} onClick={() => setQrOpen(true)} aria-label={`Show QR code for ${name}`}>
+              <Icon name="qr" />
+              QR code
             </button>
           </>
         ) : (
@@ -87,6 +99,36 @@ export function MemberLink({ committeeId, memberId, name, token, enabled }: Prop
         <div style={{ marginTop: 8 }}>
           <ErrorNote>{error}</ErrorNote>
         </div>
+      ) : null}
+      {enabled && origin !== "" ? (
+        <dialog
+          ref={qr}
+          className="qrdialog"
+          aria-label={`QR code for ${name}`}
+          onClose={() => {
+            setQrOpen(false);
+            qrButton.current?.focus();
+          }}
+        >
+          {qrOpen ? (
+            <>
+              <h3 dir="auto">{name}</h3>
+              <div role="img" aria-label={`QR code for ${name}'s link`} data-link={url} className="qrbox">
+                <QRCodeSVG value={url} size={208} marginSize={2} level="M" aria-hidden="true" />
+              </div>
+              <p className="mut">Ask {name} to point their phone camera at this. It opens their own page, and nobody else&rsquo;s.</p>
+              <div className="qractions">
+                <button className="btn secondary" type="button" onClick={copy}>
+                  <Icon name={copied ? "check" : "list"} />
+                  {copied ? "Copied" : "Copy link"}
+                </button>
+                <button className="btn primary" type="button" onClick={() => qr.current?.close()}>
+                  Done
+                </button>
+              </div>
+            </>
+          ) : null}
+        </dialog>
       ) : null}
     </div>
   );

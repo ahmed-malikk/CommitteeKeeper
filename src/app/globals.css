@@ -473,3 +473,12 @@ label.btn[aria-disabled="true"] { opacity: .6; pointer-events: none; }
 .hibstack dt { font-weight: 600; }
 .hibstack dd { margin: 0; overflow-wrap: anywhere; }
 @media (max-width: 640px) { .hibstack div { grid-template-columns: minmax(0, 1fr); } }
+
+/* ── QR code for a member's link (#28) ────────────────────────────────────── */
+.qrdialog { border: 0; border-radius: 20px; padding: 24px; width: min(360px, calc(100% - 32px)); text-align: center; background: var(--paper); color: var(--ink); box-shadow: 0 24px 60px -20px rgb(20 52 59 / .55); }
+.qrdialog::backdrop { background: rgb(20 52 59 / .45); }
+.qrdialog h3 { margin: 0 0 12px; font-size: 1.25rem; overflow-wrap: anywhere; }
+.qrbox { width: 208px; height: 208px; margin: 0 auto 12px; background: #fff; border-radius: 12px; line-height: 0; }
+.qrbox svg { width: 100%; height: 100%; display: block; }
+.qractions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
+@media print { .qrdialog { display: none !important; } }

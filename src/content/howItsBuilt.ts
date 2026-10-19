@@ -82,6 +82,6 @@ export const LINKS = {
 export const CREDITS = {
   heading: "Credits",
   paragraphs: [
-    "Built with Next.js, React, Supabase, Vitest and Playwright. Fonts: Red Hat Display and Red Hat Mono, licensed under the SIL Open Font License. This project is released under the MIT licence.",
+    "Built with Next.js, React, Supabase, Vitest and Playwright, and qrcode.react (ISC licence) for the QR codes. Fonts: Red Hat Display and Red Hat Mono, licensed under the SIL Open Font License. This project is released under the MIT licence.",
   ],
 };
