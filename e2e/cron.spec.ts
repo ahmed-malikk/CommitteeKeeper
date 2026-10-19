@@ -2,8 +2,9 @@ import { expect, test } from "@playwright/test";
 
 // The daily job's front door, checked as an API (no browser page). TC-043 to TC-045.
 // Locally CRON_SECRET comes from .env.local; on a deployed site the tests can't know it, so only the refusals run there.
-const secret = process.env.CRON_SECRET ?? "";
 const remote = Boolean(process.env.E2E_BASE_URL);
+// The local secret in .env.local belongs to the local server only; a deployed site has its own, which these tests cannot know.
+const secret = remote ? "" : (process.env.CRON_SECRET ?? "");
 
 test.describe("the daily job (US-16)", () => {
   test("is refused without its secret, and with a wrong one (TC-043)", { tag: "@smoke" }, async ({ request }) => {
