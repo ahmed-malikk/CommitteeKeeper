@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type TestInfo } from "@playwright/test";
-import { ORGANISER_STATE, SIGNED_OUT, hasLogin, organiserDb, runningByHand } from "./helpers";
+import { ORGANISER_STATE, SIGNED_OUT, hasLogin, organiserDb, runningByHand, openLinkSettings, tokenOf } from "./helpers";
 
 test.use({ storageState: ORGANISER_STATE });
 test.skip(!hasLogin, "needs the test login");
@@ -14,11 +14,6 @@ async function asStranger(browser: Browser, testInfo: TestInfo, path: string) {
   await context.close();
   return { status: response?.status() ?? 0, text, overflow };
 }
-
-const tokenOf = async (page: import("@playwright/test").Page, name: string) => {
-  const url = await page.getByRole("textbox", { name: `Link for ${name}` }).inputValue();
-  return url.split("/m/")[1];
-};
 
 test.describe("a private link for each member (US-17)", () => {
   test("the link opens that member's page for a stranger, and shows nobody else's details (FR-15)", async ({ page, browser }, testInfo) => {
@@ -56,6 +51,7 @@ test.describe("a private link for each member (US-17)", () => {
     expect(unknown.text).toContain("This link doesn’t work");
 
     // Switch it off: the very same answer as one that never existed.
+    await openLinkSettings(page, "Ali");
     await page.getByRole("button", { name: "Turn off the link for Ali" }).click();
     await expect(page.getByText("Anyone who opens it sees nothing.")).toBeVisible({ timeout: 30_000 });
     const off = await asStranger(browser, testInfo, `/m/${token}`);
@@ -66,7 +62,7 @@ test.describe("a private link for each member (US-17)", () => {
 
     // And back on: it works again, with the same link.
     await page.getByRole("button", { name: "Turn on the link for Ali" }).click();
-    await expect(page.getByRole("textbox", { name: "Link for Ali" })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole("group", { name: "Private link for Ali" }).getByText("Link on")).toBeVisible({ timeout: 30_000 });
     const on = await asStranger(browser, testInfo, `/m/${token}`);
     expect(on.status).toBe(200);
     expect(on.text).toContain("Hello Ali");
@@ -78,6 +74,7 @@ test.describe("a private link for each member (US-17)", () => {
     await page.goto(`${url}/members`);
     const oldToken = await tokenOf(page, "Ali");
 
+    await openLinkSettings(page, "Ali");
     await page.getByRole("button", { name: "Make a new link for Ali" }).click();
     const confirm = page.getByRole("group", { name: "Confirm a new link for Ali" });
     await expect(confirm).toBeFocused();

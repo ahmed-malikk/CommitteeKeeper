@@ -437,7 +437,6 @@ label.btn[aria-disabled="true"] { opacity: .6; pointer-events: none; }
 /* ── Private member links (#21) ───────────────────────────────────────────── */
 .mlink { margin-top: 10px; }
 .mlinkrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.mlinkurl { flex: 1 1 14rem; min-width: 0; font-family: var(--num); font-size: .8125rem; padding-block: 6px; }
 @media print { .mlink { display: none !important; } }
 
 /* ── The member's own page (#22) ──────────────────────────────────────────── */
@@ -486,3 +485,9 @@ label.btn[aria-disabled="true"] { opacity: .6; pointer-events: none; }
 
 /* ── A new person in the replace panel (#29) ──────────────────────────────── */
 .newperson { margin: 0 0 4px; }
+
+/* ── A calmer member link row (#30) ───────────────────────────────────────── */
+.linkmore > summary { list-style: none; cursor: pointer; }
+.linkmore > summary::-webkit-details-marker { display: none; }
+.linkmorebody { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.mlinkmanual { margin-top: 8px; overflow-wrap: anywhere; }

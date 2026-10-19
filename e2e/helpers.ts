@@ -123,3 +123,21 @@ export async function payOutAllTurns(committeeUrl: string) {
     if (paid.error) throw new Error(`record_payout failed: ${paid.error.message}`);
   }
 }
+
+/**
+ * A member's private link token, read straight from the database as the organiser. The Members page shows Copy link and QR code
+ * buttons, not the address, so a test that needs the address asks for it here. Call it while on one of the committee's pages.
+ */
+export async function tokenOf(page: Page, name: string): Promise<string> {
+  const committeeId = /\/committees\/([0-9a-f-]{36})/.exec(page.url())?.[1];
+  if (!committeeId) throw new Error(`tokenOf needs a committee page, but the page is ${page.url()}`);
+  const db = await organiserDb();
+  const row = await db.from("members").select("link_token").eq("committee_id", committeeId).eq("name", name).single();
+  if (row.error) throw new Error(`No member called ${name}: ${row.error.message}`);
+  return row.data.link_token as string;
+}
+
+/** Opens the "Link settings" disclosure of one member's link row (Turn off, New link). */
+export async function openLinkSettings(page: Page, name: string) {
+  await page.getByRole("group", { name: `Private link for ${name}` }).getByText("Link settings").click();
+}

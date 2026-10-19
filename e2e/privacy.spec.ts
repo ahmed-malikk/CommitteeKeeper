@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ORGANISER_STATE, SIGNED_OUT, hasLogin, runningByHand } from "./helpers";
+import { ORGANISER_STATE, SIGNED_OUT, hasLogin, runningByHand, tokenOf } from "./helpers";
 
 test.describe("the privacy page (US-23)", () => {
   test.use({ storageState: SIGNED_OUT });
@@ -52,7 +52,7 @@ test.describe("the privacy page from inside the app and from a member link", () 
     test.setTimeout(300_000);
     const { url } = await runningByHand(page, ["Ali", "مریم خان"]);
     await page.goto(`${url}/members`);
-    const token = (await page.getByRole("textbox", { name: "Link for Ali" }).inputValue()).split("/m/")[1];
+    const token = await tokenOf(page, "Ali");
     const context = await browser.newContext({ storageState: SIGNED_OUT, baseURL: testInfo.project.use.baseURL });
     const member = await context.newPage();
     await member.goto(`/m/${token}`);

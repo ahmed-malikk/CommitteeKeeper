@@ -1,12 +1,11 @@
 import { createHash } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
-import { ORGANISER_STATE, SIGNED_OUT, hasLogin, organiserDb, runningByHand } from "./helpers";
+import { ORGANISER_STATE, SIGNED_OUT, hasLogin, organiserDb, runningByHand, tokenOf } from "./helpers";
 import { makePng } from "./png";
 
 test.use({ storageState: ORGANISER_STATE });
 test.skip(!hasLogin, "needs the test login");
 
-const tokenOf = async (page: Page, name: string) => (await page.getByRole("textbox", { name: `Link for ${name}` }).inputValue()).split("/m/")[1];
 
 /** Ali's payment for the first month, recorded straight in the database, with two small receipt images attached. */
 async function committeeWithAlisPayment(page: Page) {

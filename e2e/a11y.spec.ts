@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { LISTS_STATE, ORGANISER_STATE, SIGNED_OUT, hasLogin, organiserDb, runningByHand } from "./helpers";
+import { LISTS_STATE, ORGANISER_STATE, SIGNED_OUT, hasLogin, organiserDb, runningByHand, tokenOf } from "./helpers";
 
 // An automated accessibility scan (axe-core) of every main screen against WCAG 2.2 AA, at laptop and phone size
 // (the three Playwright projects). It finds what a machine can: contrast, names and labels, roles, landmarks, headings.
@@ -66,7 +66,7 @@ test.describe("accessibility scan: the organiser's screens", () => {
     const db = await organiserDb();
     await db.rpc("set_visibility", { p_committee_id: committeeId, p_payments: true, p_turns: true, p_history: true });
     await page.goto(`${url}/members`);
-    const token = (await page.getByRole("textbox", { name: "Link for Ali" }).inputValue()).split("/m/")[1];
+    const token = await tokenOf(page, "Ali");
     const context = await browser.newContext({ storageState: SIGNED_OUT, baseURL: testInfo.project.use.baseURL });
     const member = await context.newPage();
     await member.goto(`/m/${token}`);

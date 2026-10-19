@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type Page, type TestInfo } from "@playwright/test";
-import { ORGANISER_STATE, SIGNED_OUT, hasLogin, organiserDb, runningByHand } from "./helpers";
+import { ORGANISER_STATE, SIGNED_OUT, hasLogin, organiserDb, runningByHand, tokenOf } from "./helpers";
 
 test.use({ storageState: ORGANISER_STATE });
 test.skip(!hasLogin, "needs the test login");
@@ -16,7 +16,6 @@ async function asStranger(browser: Browser, testInfo: TestInfo, path: string) {
   return { text, html, overflow };
 }
 
-const tokenOf = async (page: Page, name: string) => (await page.getByRole("textbox", { name: `Link for ${name}` }).inputValue()).split("/m/")[1];
 
 // Two members, two periods, Rs 1,000 a month, running since January 2026. The order is مریم خان first, then Ali.
 test.describe("the member's own view (US-18, US-21)", () => {

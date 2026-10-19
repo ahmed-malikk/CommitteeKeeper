@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type Page, type TestInfo } from "@playwright/test";
-import { ORGANISER_STATE, SIGNED_OUT, hasLogin, runningByHand } from "./helpers";
+import { ORGANISER_STATE, SIGNED_OUT, hasLogin, runningByHand, tokenOf } from "./helpers";
 
 test.use({ storageState: ORGANISER_STATE });
 test.skip(!hasLogin, "needs the test login");
@@ -8,7 +8,6 @@ const memberEmail = process.env.CK_TEST_MEMBER_EMAIL ?? "";
 const memberPassword = process.env.CK_TEST_MEMBER_PASSWORD ?? "";
 test.skip(memberEmail === "" || memberPassword === "", "needs the member test login");
 
-const tokenOf = async (page: Page, name: string) => (await page.getByRole("textbox", { name: `Link for ${name}` }).inputValue()).split("/m/")[1];
 
 /** A new committee with Ali and مریم خان, and Ali's link. Returns the committee's name as shown, too. */
 async function committeeWithLink(page: Page) {

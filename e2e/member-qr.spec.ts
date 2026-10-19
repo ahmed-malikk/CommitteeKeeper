@@ -1,7 +1,7 @@
 import jsQR from "jsqr";
 import { PNG } from "pngjs";
 import { expect, test, type Page } from "@playwright/test";
-import { ORGANISER_STATE, SIGNED_OUT, hasLogin, runningByHand } from "./helpers";
+import { ORGANISER_STATE, SIGNED_OUT, hasLogin, runningByHand, openLinkSettings, tokenOf } from "./helpers";
 
 test.use({ storageState: ORGANISER_STATE });
 test.skip(!hasLogin, "needs the test login");
@@ -18,9 +18,7 @@ test.describe("a member's link as a QR code (US-17b)", () => {
     test.setTimeout(300_000);
     const { url } = await runningByHand(page, ["Ali", "مریم خان"]);
     await page.goto(`${url}/members`);
-    // The box shows the full address once the page has loaded (before that it holds only the path).
-    await expect(page.getByRole("textbox", { name: "Link for Ali" })).toHaveValue(/^http/);
-    const link = await page.getByRole("textbox", { name: "Link for Ali" }).inputValue();
+    const link = `${testInfo.project.use.baseURL}/m/${await tokenOf(page, "Ali")}`;
 
     const open = page.getByRole("button", { name: "Show QR code for Ali" });
     await open.click();
@@ -47,24 +45,24 @@ test.describe("a member's link as a QR code (US-17b)", () => {
     await expect(dialog).toBeHidden();
   });
 
-  test("always matches the current link, and a switched-off link has no QR code (FR-15)", async ({ page }) => {
+  test("always matches the current link, and a switched-off link has no QR code (FR-15)", async ({ page }, testInfo) => {
     test.setTimeout(300_000);
     const { url } = await runningByHand(page, ["Ali", "مریم خان"]);
     await page.goto(`${url}/members`);
-    await expect(page.getByRole("textbox", { name: "Link for Ali" })).toHaveValue(/^http/);
-    const oldLink = await page.getByRole("textbox", { name: "Link for Ali" }).inputValue();
+    const oldToken = await tokenOf(page, "Ali");
 
+    await openLinkSettings(page, "Ali");
     await page.getByRole("button", { name: "Make a new link for Ali" }).click();
     await page.getByRole("button", { name: "Yes, make a new link" }).click();
     await expect(async () => {
-      expect(await page.getByRole("textbox", { name: "Link for Ali" }).inputValue()).toMatch(/^http/);
-      expect(await page.getByRole("textbox", { name: "Link for Ali" }).inputValue()).not.toBe(oldLink);
+      expect(await tokenOf(page, "Ali")).not.toBe(oldToken);
     }).toPass({ timeout: 30_000 });
-    const newLink = await page.getByRole("textbox", { name: "Link for Ali" }).inputValue();
+    const newLink = `${testInfo.project.use.baseURL}/m/${await tokenOf(page, "Ali")}`;
     await page.getByRole("button", { name: "Show QR code for Ali" }).click();
     expect(await scan(page)).toBe(newLink);
     await page.keyboard.press("Escape");
 
+    await openLinkSettings(page, "Ali");
     await page.getByRole("button", { name: "Turn off the link for Ali" }).click();
     await expect(page.getByText("Anyone who opens it sees nothing.")).toBeVisible({ timeout: 30_000 });
     await expect(page.getByRole("button", { name: "Show QR code for Ali" })).toHaveCount(0);

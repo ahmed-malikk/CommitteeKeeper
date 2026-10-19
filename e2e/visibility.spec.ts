@@ -1,10 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
-import { ORGANISER_STATE, SIGNED_OUT, hasLogin, organiserDb, runningByHand } from "./helpers";
+import { ORGANISER_STATE, SIGNED_OUT, hasLogin, organiserDb, runningByHand, tokenOf } from "./helpers";
 
 test.use({ storageState: ORGANISER_STATE });
 test.skip(!hasLogin, "needs the test login");
 
-const tokenOf = async (page: Page, name: string) => (await page.getByRole("textbox", { name: `Link for ${name}` }).inputValue()).split("/m/")[1];
 
 test.describe("the organiser controls what members can see (US-21)", () => {
   test("three switches, all off; flipping one changes the member's page at once, and it is in the history (FR-19)", async ({ page, browser }, testInfo) => {

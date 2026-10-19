@@ -20,7 +20,8 @@ export function MemberLink({ committeeId, memberId, name, token, enabled }: Prop
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const { box, trigger } = useConfirmFocus(asking);
-  const field = useRef<HTMLInputElement>(null);
+  const [manual, setManual] = useState(false);
+  const settings = useRef<HTMLDetailsElement>(null);
   const qr = useRef<HTMLDialogElement>(null);
   const [qrOpen, setQrOpen] = useState(false);
   const qrButton = useRef<HTMLButtonElement>(null);
@@ -37,7 +38,8 @@ export function MemberLink({ committeeId, memberId, name, token, enabled }: Prop
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     } catch {
-      field.current?.select();
+      // The browser refused the clipboard: show the address so it can be copied by hand.
+      setManual(true);
     }
   }
   const run = (job: () => Promise<{ error: string | null }>) =>
@@ -46,6 +48,7 @@ export function MemberLink({ committeeId, memberId, name, token, enabled }: Prop
       const result = await job();
       setError(result.error);
       setAsking(false);
+      if (!result.error) settings.current?.removeAttribute("open");
     });
 
   return (
@@ -57,7 +60,6 @@ export function MemberLink({ committeeId, memberId, name, token, enabled }: Prop
         </span>
         {enabled ? (
           <>
-            <input ref={field} className="input mlinkurl" readOnly value={url} aria-label={`Link for ${name}`} onFocus={(e) => e.currentTarget.select()} />
             <button className="btn secondary small" type="button" onClick={copy} aria-label={`Copy link for ${name}`}>
               <Icon name={copied ? "check" : "list"} />
               {copied ? "Copied" : "Copy link"}
@@ -66,19 +68,34 @@ export function MemberLink({ committeeId, memberId, name, token, enabled }: Prop
               <Icon name="qr" />
               QR code
             </button>
+            <details className="linkmore" ref={settings}>
+              <summary className="btn ghost small">Link settings</summary>
+              <div className="linkmorebody">
+                <button className="btn ghost small" type="button" disabled={pending} onClick={() => run(() => setMemberLink(committeeId, memberId, false))} aria-label={`Turn off the link for ${name}`}>
+                  Turn off
+                </button>
+                {!asking ? (
+                  <button className="btn ghost small" type="button" ref={trigger} disabled={pending} onClick={() => setAsking(true)} aria-label={`Make a new link for ${name}`}>
+                    New link
+                  </button>
+                ) : null}
+              </div>
+            </details>
           </>
         ) : (
-          <span className="s">Anyone who opens it sees nothing.</span>
+          <>
+            <span className="s">Anyone who opens it sees nothing.</span>
+            <button className="btn ghost small" type="button" disabled={pending} onClick={() => run(() => setMemberLink(committeeId, memberId, true))} aria-label={`Turn on the link for ${name}`}>
+              Turn on
+            </button>
+          </>
         )}
-        <button className="btn ghost small" type="button" disabled={pending} onClick={() => run(() => setMemberLink(committeeId, memberId, !enabled))} aria-label={`${enabled ? "Turn off" : "Turn on"} the link for ${name}`}>
-          {enabled ? "Turn off" : "Turn on"}
-        </button>
-        {!asking ? (
-          <button className="btn ghost small" type="button" ref={trigger} disabled={pending} onClick={() => setAsking(true)} aria-label={`Make a new link for ${name}`}>
-            New link
-          </button>
-        ) : null}
       </div>
+      {manual ? (
+        <p className="s mlinkmanual" role="status">
+          Your browser would not copy it. Select this address and copy it yourself: <span className="fp">{url}</span>
+        </p>
+      ) : null}
       {asking ? (
         <div className="note" role="group" aria-label={`Confirm a new link for ${name}`} ref={box} tabIndex={-1} style={{ marginTop: 8 }}>
           <Icon name="alert" />
