@@ -463,3 +463,13 @@ label.btn[aria-disabled="true"] { opacity: .6; pointer-events: none; }
 .privacy h3 { margin: 16px 0 6px; font-size: 1.0625rem; }
 .privacy ul { padding-left: 20px; }
 .privacy li { margin: 6px 0; overflow-wrap: anywhere; }
+
+/* ── How it's built (#27) ─────────────────────────────────────────────────── */
+.hib section { margin: 28px 0; }
+.hib h2 { margin-bottom: 8px; }
+.hib li { margin: 6px 0; overflow-wrap: anywhere; }
+.hibstack { margin: 0; display: grid; gap: 10px; }
+.hibstack div { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr); gap: 4px 16px; padding: 10px 14px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); }
+.hibstack dt { font-weight: 600; }
+.hibstack dd { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 640px) { .hibstack div { grid-template-columns: minmax(0, 1fr); } }
