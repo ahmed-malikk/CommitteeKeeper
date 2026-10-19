@@ -2,7 +2,7 @@
 
 **Author:** Ahmed Malik · **Date:** 19 October 2026 · **Related:** [Test plan](test-plan.md) · [BRD](BRD.md) · [PRD](PRD.md)
 
-All numbers below come from runs on 19 October 2026 (commit `cc04b99` and the commits just before it).
+All numbers below come from runs on 19 October 2026 (release commit `ac65339`, and the commits just before it).
 
 ## Summary
 
@@ -11,7 +11,7 @@ All numbers below come from runs on 19 October 2026 (commit `cc04b99` and the co
 | Unit (Vitest) | **189 passed**, 0 failed (16 files) |
 | Role-check script (database, acts as each role) | **156 checks passed**, 0 failed |
 | System (Playwright), local production build | Full run on the final tree before the last features: 301 passed, 5 passed on retry, 2 failed on connection errors (both passed when re-run alone), 1 skipped by design. The two newest specs (home screen, member account) were re-run after the last change: 17 passed |
-| System, live site (`committeekeeper.vercel.app`), 223 runs, 2 workers, 1 retry, 52 minutes | **211 passed, 5 passed on retry, 1 skipped by design, 6 failed.** All 6 passed when re-run alone (12 passed). Causes: connection errors between the test computer and the database (`fetch failed`, four tests) and slow-network timeouts in the "signing out on another device" test and one member-link test |
+| System, live site (`committeekeeper.vercel.app`), the release build `ac65339`, 226 runs, 2 workers, 1 retry, 34 minutes | **221 passed, 3 passed on retry, 1 skipped by design, 1 failed.** The failure (`member-payments`, "my payments with my receipts", desktop Edge) hit its 400 s timeout and passed when re-run alone in 47 s. The same test also failed once in the previous live run on a connection reset, so it is the first one to look at if live runs keep stalling. The three retried tests were the "signing out on another device" test and two member-link tests, all slow-network timeouts. An earlier live run on the commit before the last feature had 6 failures, all connection errors from the test computer, all passing when re-run alone |
 | Accessibility (axe-core, WCAG 2.2 AA) | 9 main screens at laptop and phone size: no violations after the fixes below |
 | Type check | Clean |
 
@@ -40,7 +40,7 @@ A test is a pass only when it passed without code changes; the "failed, passed a
 
 ## Test speed
 
-The first full run took about 1.5 hours (354 runs) because almost every test built its own committee by clicking through the app. Seeding through the database, running each test only where it matters and a smoke set brought the live-site run to 223 runs in 52 minutes.
+The first full run took about 1.5 hours (354 runs) because almost every test built its own committee by clicking through the app. Seeding through the database, running each test only where it matters and a smoke set brought the live-site run to 223 runs in 52 minutes, and the release run (226 runs) to 34 minutes.
 
 ## Known gaps (not tested, not claimed)
 
