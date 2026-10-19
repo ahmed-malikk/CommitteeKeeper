@@ -40,6 +40,10 @@ export async function addMember(previous: MemberState, formData: FormData): Prom
   const target = await open(formData);
   if (!target) return fail("That committee was not found.", {}, previous);
   const { id, committee } = target;
+  // Every slot is taken once a committee runs, so nobody new is needed except to replace someone who leaves; that has its own form.
+  if (committee.status === "running") {
+    return fail("This committee is running and every slot is taken. To bring someone new in, use “A member leaves” and add them there.", {}, previous);
+  }
 
   const { clean, problems } = validateMember({ name: text(formData, "name"), email: text(formData, "email"), phone: text(formData, "phone") });
   const supabase = await createClient();
@@ -142,8 +146,9 @@ export async function replaceHolder(previous: MemberState, formData: FormData): 
   const target = await open(formData);
   if (!target) return fail("That committee was not found.", {}, previous);
   const slotId = text(formData, "slotId");
-  const memberId = text(formData, "memberId");
-  if (!isUuid(slotId) || !isUuid(memberId)) return fail("Choose the slot and the replacement.", {}, previous);
+  const chosen = text(formData, "memberId");
+  const isNew = chosen === "new";
+  if (!isUuid(slotId) || (!isNew && !isUuid(chosen))) return fail("Choose the slot and the replacement.", {}, previous);
   const fromPeriod = Number(text(formData, "fromPeriod"));
   if (!Number.isInteger(fromPeriod) || fromPeriod < 2 || fromPeriod > target.committee.periods) {
     return fail(`Choose a period from 2 to ${target.committee.periods}.`, {}, previous);
@@ -152,6 +157,17 @@ export async function replaceHolder(previous: MemberState, formData: FormData): 
   if ([...reason].length > 200) return fail("Keep the reason to 200 characters or fewer.", {}, previous);
 
   const supabase = await createClient();
+
+  // A new person is added here, in the same step that hands the slot over, so nobody joins a running committee without taking a slot.
+  let memberId = chosen;
+  if (isNew) {
+    const { clean, problems } = validateMember({ name: text(formData, "newName"), email: text(formData, "newEmail"), phone: text(formData, "newPhone") });
+    if (!clean) return fail(problems.name ?? problems.email ?? problems.phone ?? "Check the new person’s details.", problems, previous);
+    const created = await supabase.rpc("add_member", { p_committee_id: target.id, p_name: clean.name, p_email: clean.email || null, p_phone: clean.phone || null });
+    if (created.error || typeof created.data !== "string") return fail(explain(created.error ?? { message: "no id" }, "add the new person"), {}, previous);
+    memberId = created.data;
+  }
+
   const { error } = await supabase.rpc("replace_holder", {
     p_committee_id: target.id,
     p_slot_id: slotId,

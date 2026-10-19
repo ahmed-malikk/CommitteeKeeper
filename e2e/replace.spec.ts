@@ -4,28 +4,24 @@ import { ORGANISER_STATE, addMembers, createCommittee, hasLogin, runningByHand, 
 test.use({ storageState: ORGANISER_STATE });
 test.skip(!hasLogin, "needs the test login");
 
-/** While the committee runs, a new member has no slot yet (slots are only given out while forming). */
-async function addMemberWithoutSlot(page: Page, name: string) {
-  const form = page.getByRole("form", { name: "Add a member" });
-  await form.getByLabel("Name").fill(name);
-  await form.getByRole("button", { name: "Add member" }).click();
-  await expect(page.locator(".members .t", { hasText: name })).toBeVisible();
-}
-
 test.describe("a member leaves and a replacement takes over", () => {
   test("the new holder takes the slot from a later period and the pot splits by periods covered (FR-11)", async ({ page }) => {
     test.setTimeout(240_000);
     // Rs 1,000 and 4 periods: Ali covers period 1, Noor takes over from period 2, so the pot splits Rs 1,000 and Rs 3,000.
     const { url } = await runningByHand(page, ["Ali", "Sara", "Hira", "Bilal"]);
     await page.goto(`${url}/members`);
-    await addMemberWithoutSlot(page, "Noor");
+
+    // Every slot is taken, so there is no way to add a member on their own: someone new joins only by taking over a slot.
+    await expect(page.getByRole("form", { name: "Add a member" })).toHaveCount(0);
+    await expect(page.getByText("nobody new can join on their own")).toBeVisible();
 
     const form = page.getByRole("form", { name: "A member leaves" });
     await expect(form.getByRole("button", { name: "Hand the slot over" })).toBeDisabled();
     await form.getByLabel("Slot that changes hands").selectOption({ label: "Ali" });
     // The leaver cannot be chosen as their own replacement.
     await expect(form.getByLabel("Replacement").getByRole("option", { name: "Ali" })).toHaveCount(0);
-    await form.getByLabel("Replacement").selectOption({ label: "Noor" });
+    await form.getByLabel("Replacement").selectOption({ label: "A new person…" });
+    await form.getByLabel("New person’s name").fill("Noor");
     // The leaver already holds period 1, so the earliest period offered is 2.
     await expect(form.getByLabel("Takes over from period").getByRole("option", { name: "Period 1" })).toHaveCount(0);
     await form.getByLabel("Takes over from period").selectOption({ label: "Period 2" });
@@ -62,10 +58,10 @@ test.describe("a member leaves and a replacement takes over", () => {
     await startCommitteeOnPage(page, url);
 
     await page.goto(`${url}/members`);
-    await addMemberWithoutSlot(page, "Noor");
     const form = page.getByRole("form", { name: "A member leaves" });
     await form.getByLabel("Slot that changes hands").selectOption({ label: "Ali · slot 2" });
-    await form.getByLabel("Replacement").selectOption({ label: "Noor" });
+    await form.getByLabel("Replacement").selectOption({ label: "A new person…" });
+    await form.getByLabel("New person’s name").fill("Noor");
     await form.getByLabel("Takes over from period").selectOption({ label: "Period 2" });
     await form.getByRole("button", { name: "Hand the slot over" }).click();
     await expect(page.getByText("Done. The new holder is in the history")).toBeVisible();
@@ -74,6 +70,23 @@ test.describe("a member leaves and a replacement takes over", () => {
     await expect(page.getByText("3 slots. The pot is Rs 3,000 each period.")).toBeVisible();
     await expect(page.getByText("1 slot · owes Rs 1,000 each period · covered earlier periods of another slot")).toBeVisible();
     await expect(page.getByText("2 slots · owes Rs 2,000 each period")).toHaveCount(0);
+  });
+
+  test("someone already in the committee can take over a slot, and a nameless new person is refused (FR-11)", async ({ page }) => {
+    test.setTimeout(240_000);
+    const { url } = await runningByHand(page, ["Ali", "Sara", "Hira"]);
+    await page.goto(`${url}/members`);
+    const form = page.getByRole("form", { name: "A member leaves" });
+    await form.getByLabel("Slot that changes hands").selectOption({ label: "Ali" });
+    // A new person needs a name before the slot can be handed over.
+    await form.getByLabel("Replacement").selectOption({ label: "A new person…" });
+    await expect(form.getByRole("button", { name: "Hand the slot over" })).toBeDisabled();
+    // Someone who is already a member can take over instead (they then hold two slots).
+    await form.getByLabel("Replacement").selectOption({ label: "Sara" });
+    await form.getByLabel("Takes over from period").selectOption({ label: "Period 2" });
+    await form.getByRole("button", { name: "Hand the slot over" }).click();
+    await expect(page.getByText("Done. The new holder is in the history")).toBeVisible();
+    await expect(page.getByText("2 slots · owes Rs 2,000 each period")).toBeVisible();
   });
 
   test("there is no leaver form while the committee is still forming", async ({ page }) => {

@@ -30,11 +30,13 @@ export function ReplacePanel({ committeeId, amount, periods, display, slots, mem
   const [slotId, setSlotId] = useState("");
   const [memberId, setMemberId] = useState("");
   const [from, setFrom] = useState("");
+  const [newName, setNewName] = useState("");
 
   const slot = slots.find((s) => s.id === slotId);
   const current = slot?.holders[slot.holders.length - 1];
   const candidates = members.filter((m) => m.id !== current?.memberId);
-  const replacement = candidates.find((m) => m.id === memberId);
+  const isNew = memberId === "new";
+  const replacement = isNew ? { id: "new", name: newName.trim() || "The new person" } : candidates.find((m) => m.id === memberId);
   const firstPeriod = current ? current.fromPeriod + 1 : 2;
   const periodChoices = Array.from({ length: Math.max(0, periods - firstPeriod + 1) }, (_, i) => firstPeriod + i);
   const fromNumber = Number(from);
@@ -49,7 +51,7 @@ export function ReplacePanel({ committeeId, amount, periods, display, slots, mem
       <input type="hidden" name="committeeId" value={committeeId} />
       <h3>A member leaves</h3>
       <p className="mut" style={{ marginBottom: 12 }}>
-        Someone else takes over one slot from a later period. What the leaver already paid stays with the leaver. Add the replacement as a member first.
+        Someone else takes over one slot from a later period. What the leaver already paid stays with the leaver. The replacement can be someone already in the committee, or a new person you add here.
       </p>
       {state.error ? (
         <div style={{ marginBottom: 12 }}>
@@ -89,8 +91,28 @@ export function ReplacePanel({ committeeId, amount, periods, display, slots, mem
               {m.name}
             </option>
           ))}
+          <option value="new">A new person…</option>
         </select>
       </div>
+
+      {isNew ? (
+        <div className="newperson">
+          <div className="field">
+            <label htmlFor="rep-new-name">New person&rsquo;s name</label>
+            <input className="input" id="rep-new-name" name="newName" dir="auto" autoComplete="off" required value={newName} onChange={(e) => setNewName(e.target.value)} />
+          </div>
+          <div className="pair">
+            <div className="field">
+              <label htmlFor="rep-new-email">Email (optional)</label>
+              <input className="input" id="rep-new-email" name="newEmail" type="email" autoComplete="off" />
+            </div>
+            <div className="field">
+              <label htmlFor="rep-new-phone">Phone (optional)</label>
+              <input className="input" id="rep-new-phone" name="newPhone" type="tel" inputMode="tel" autoComplete="off" />
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="field">
         <label htmlFor="rep-from">Takes over from period</label>
@@ -127,7 +149,7 @@ export function ReplacePanel({ committeeId, amount, periods, display, slots, mem
         <span className="hint">It is written to the history with the names and the first period.</span>
       </div>
 
-      <button className="btn primary" disabled={pending || !shares}>
+      <button className="btn primary" disabled={pending || !shares || (isNew && newName.trim() === "")}>
         {pending ? "Saving…" : "Hand the slot over"}
       </button>
     </form>

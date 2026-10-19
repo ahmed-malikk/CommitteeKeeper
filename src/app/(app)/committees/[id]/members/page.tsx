@@ -111,13 +111,26 @@ export default async function MembersPage({ params, searchParams }: { params: Pr
 
           {locked ? null : (
           <section>
-            <h2>{members.data && members.data.length > 0 ? "Add another member" : "Add the first member"}</h2>
-            <AddMemberForm committeeId={id} withSlots={forming} room={room} />
-            <p className="sm mut" style={{ marginTop: 10 }}>
-              Email and phone are visible to you only. Members never see each other&rsquo;s details.
-            </p>
-            {running && replaceSlots.length > 0 && replaceMembers.length >= 2 ? (
-              <div style={{ marginTop: 24 }}>
+            {running ? (
+              <>
+                <h2>A member leaves</h2>
+                <p className="note" style={{ marginBottom: 14 }}>
+                  <span>
+                    Every slot is taken, so nobody new can join on their own. To bring someone in, they take over a slot from someone who leaves.
+                  </span>
+                </p>
+              </>
+            ) : (
+              <>
+                <h2>{members.data && members.data.length > 0 ? "Add another member" : "Add the first member"}</h2>
+                <AddMemberForm committeeId={id} withSlots={forming} room={room} />
+                <p className="sm mut" style={{ marginTop: 10 }}>
+                  Email and phone are visible to you only. Members never see each other&rsquo;s details.
+                </p>
+              </>
+            )}
+            {running && replaceSlots.length > 0 ? (
+              <div style={{ marginTop: running ? 0 : 24 }}>
                 <ReplacePanel
                   committeeId={id}
                   amount={c.amount}

@@ -483,3 +483,6 @@ label.btn[aria-disabled="true"] { opacity: .6; pointer-events: none; }
 .qrbox svg { width: 100%; height: 100%; display: block; }
 .qractions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
 @media print { .qrdialog { display: none !important; } }
+
+/* ── A new person in the replace panel (#29) ──────────────────────────────── */
+.newperson { margin: 0 0 4px; }
