@@ -445,3 +445,7 @@ label.btn[aria-disabled="true"] { opacity: .6; pointer-events: none; }
 .mstatus { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 10px; }
 .mblock { margin: 26px 0; }
 .mblock h2 { margin-bottom: 10px; }
+
+/* ── The member's payments and receipts (#24) ─────────────────────────────── */
+.mreceipts { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 4px; }
+.mreceipts a { display: inline-flex; align-items: center; gap: 6px; color: var(--tealink); font-weight: 600; min-height: 32px; }

@@ -1,6 +1,7 @@
 import { Icon } from "./Icon";
 import { formatDate, ordinal } from "@/lib/dates";
 import { historyWords, progressText, turnText, type MemberView } from "@/lib/member-view";
+import { METHOD_LABELS, periodLabel, type Method } from "@/lib/payments";
 import { formatRupees } from "@/lib/money";
 
 const STATUS_CLASS = { forming: "form", running: "run", completed: "done" } as const;
@@ -11,7 +12,7 @@ const STATUS_TEXT = { forming: "Forming", running: "Running", completed: "Comple
  * the order of turns, who has paid this month and the entries about them only when the organiser allowed it.
  * The database decides what is in `view`; this component only shows what it was given.
  */
-export function MemberBody({ view }: { view: MemberView }) {
+export function MemberBody({ view, receiptHref }: { view: MemberView; receiptHref?: (paymentId: string, n: number) => string }) {
   const c = view.committee;
   const money = (n: number) => formatRupees(n, { style: c.display_style, grouping: c.display_grouping });
   return (
@@ -45,6 +46,48 @@ export function MemberBody({ view }: { view: MemberView }) {
                     Paid out
                   </span>
                 ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section aria-labelledby="mpay-h" className="mblock">
+        <h2 id="mpay-h">Your payments</h2>
+        {view.my_payments.length === 0 ? (
+          <p className="mut">No payments are recorded for you yet.</p>
+        ) : (
+          <ul className="list">
+            {view.my_payments.map((p) => (
+              <li className="li" key={p.payment_id}>
+                <span className="grow">
+                  <span className="t">
+                    {periodLabel(c.start_date, p.period)} &middot; {money(p.amount)}
+                  </span>
+                  <span className="s">
+                    Paid {formatDate(p.paid_on)} &middot; {METHOD_LABELS[p.method as Method] ?? p.method}
+                  </span>
+                  {p.receipts > 0 ? (
+                    <span className="s mreceipts">
+                      {receiptHref ? (
+                        Array.from({ length: p.receipts }, (_, i) => (
+                          <a key={i} href={receiptHref(p.payment_id, i + 1)} target="_blank" rel="noopener noreferrer" aria-label={`Open receipt ${i + 1} for ${periodLabel(c.start_date, p.period)}`}>
+                            <Icon name="image" />
+                            Receipt {i + 1}
+                          </a>
+                        ))
+                      ) : (
+                        <>
+                          {p.receipts} receipt{p.receipts === 1 ? "" : "s"}
+                        </>
+                      )}
+                    </span>
+                  ) : null}
+                </span>
+                <span className="chip paid">
+                  <Icon name="check" />
+                  Paid
+                </span>
               </li>
             ))}
           </ul>

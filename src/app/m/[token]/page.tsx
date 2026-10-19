@@ -22,7 +22,7 @@ export default async function MemberPage({ params }: { params: Promise<{ token: 
   return (
     <PublicShell>
       <PageTransition>
-        <MemberBody view={view} />
+        <MemberBody view={view} receiptHref={(paymentId, n) => `/m/${token}/receipt/${paymentId}/${n}`} />
       </PageTransition>
     </PublicShell>
   );

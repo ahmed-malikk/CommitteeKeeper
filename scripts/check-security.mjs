@@ -257,6 +257,20 @@ const attach = (n, path = `${folder}/${n}.png`, mime = "image/png", size = png.l
   });
 const receipt1 = await works("A can register receipt 1", attach(1));
 await works("A can register receipt 2", attach(2));
+
+{
+  // What a member can learn about receipts: their own, through their own link, and nothing else (US-20).
+  const mine = await anon.rpc("member_receipt_paths", { p_token: tokenOf.Ali, p_payment_id: correction });
+  check("Ali's link returns Ali's own two receipt paths", !mine.error && mine.data?.length === 2, mine.error?.message);
+  const others = await anon.rpc("member_receipt_paths", { p_token: tokenOf.Bilal, p_payment_id: correction });
+  check("Bilal's link returns none of Ali's receipts", !others.error && (others.data ?? []).length === 0, others.error?.message);
+  const junk = await anon.rpc("member_receipt_paths", { p_token: "not-a-real-token", p_payment_id: correction });
+  check("A wrong link returns no receipt paths", !junk.error && (junk.data ?? []).length === 0, junk.error?.message);
+  const acct = await memberAcct.rpc("member_receipt_paths_account", { p_member_id: memberId.Bilal, p_payment_id: correction });
+  check("A member account gets none of another member's receipts", !acct.error && (acct.data ?? []).length === 0, acct.error?.message);
+  const direct = await anon.storage.from("receipts").createSignedUrl(`${folder}/1.png`, 60);
+  check("A visitor cannot make a signed link to a receipt file", !!direct.error || !direct.data?.signedUrl, direct.error?.message);
+}
 await refused("A third receipt is refused", attach(3));
 await refused("A PDF is refused", attach(1, `${folder}/1.pdf`, "application/pdf"), "check constraint");
 await refused("A file over 2 MB is refused", attach(1, `${folder}/1.png`, "image/png", 3_000_000), "check constraint");
